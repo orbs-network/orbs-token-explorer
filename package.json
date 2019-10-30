@@ -45,7 +45,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/orbs-network/prism.git"
+    "url": "https://github.com/orbs-network/orbs-token-explorer.git"
   },
   "license": "MIT",
   "author": "Gil Amran",
