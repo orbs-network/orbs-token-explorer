@@ -6,20 +6,23 @@
  * The above notice should be included in all copies or substantial portions of the software.
  */
 
+import {RefObject} from 'react';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
 import * as React from 'react';
-import {Avatar, Button, IconButton} from "@material-ui/core";
+import {Avatar, Button} from '@material-ui/core';
+import {Link as RouterLink, LinkProps} from 'react-router-dom';
+
+const Link1 = React.forwardRef((props: LinkProps, ref: RefObject<HTMLAnchorElement>) => <RouterLink innerRef={ref} {...props} />);
 
 export class Header extends React.Component {
   public render() {
     return (
       <AppBar position='static' >
         <Toolbar>
-            <Avatar src={"https://icodrops.com/wp-content/uploads/2018/01/Orbs-logo.jpg"}></Avatar>
-          {/*<Typography variant='h5'>ORBS Token Explorer</Typography>*/}
-            <Button> Overview </Button>
+            <Avatar src={'https://icodrops.com/wp-content/uploads/2018/01/Orbs-logo.jpg'}></Avatar>
+
+            <Button component={Link1} to={'/token-dist'}>Overview</Button>
         </Toolbar>
       </AppBar>
     );
