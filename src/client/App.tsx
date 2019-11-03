@@ -10,6 +10,7 @@ import * as React from 'react';
 import { withRouter } from 'react-router';
 import { Route, Switch } from 'react-router-dom';
 import { Home } from './components/Home';
+import {TokenOverview} from './pages/TokenOverview/TokenOverview';
 
 interface IProps {
   location?: any;
@@ -26,7 +27,7 @@ const AppImpl = ({ location }: IProps) => {
       <Route
         exact
         path='/token-dist'
-        component={Home}
+        component={TokenOverview}
       />
     </Switch>
   );

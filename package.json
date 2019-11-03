@@ -60,6 +60,8 @@
     "express": "^4.16.4",
     "find-up": "^3.0.0",
     "pg": "^7.12.1",
+    "recharts": "^1.8.5",
+    "styled-components": "^4.4.0",
     "tslib": "^1.9.3",
     "winston": "^3.2.1",
     "winston-transport-rollbar": "^2.4.0"
@@ -86,6 +88,7 @@
     "@types/node": "^10.12.18",
     "@types/puppeteer": "^1.11.1",
     "@types/react": "^16.7.18",
+    "@types/recharts": "^1.8.0",
     "@types/semver": "^6.0.0",
     "@types/socket.io": "^2.1.2",
     "@types/socket.io-client": "^1.4.32",
