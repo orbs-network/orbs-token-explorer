@@ -2,6 +2,8 @@
 import React from 'react';
 
 import {Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis} from 'recharts';
+import {Container, Divider, Typography} from '@material-ui/core';
+import styled from 'styled-components';
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Nov', 'Dec'];
 // const topHolders = Array(20).fill('').map(() => buildTokenHolder(1000));
@@ -108,32 +110,38 @@ const generatedDemoData = buildDemoData();
 
 console.log(generatedDemoData);
 
-const generateHexColor = () => '#'+ Math.floor(Math.random()*16777215).toString(16);
+const generateHexColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16);
 
+const PaddedDivider = styled(Divider)({
+    marginTop: '0.5em',
+    marginBottom: '0.5em',
+});
 
 export const TokenOverview = () => {
     return (
-        <div>
+        <Container>
+            <Typography variant={'h5'}>Token Overview</Typography>
+            <PaddedDivider />
+            <Container>
+                <BarChart
+                    width={1000}
+                    height={1000}
+                    data={generatedDemoData}
+                    margin={{
+                        top: 20, right: 30, left: 20, bottom: 5,
+                    }}
+                >
+                    <CartesianGrid strokeDasharray='3 3' />
+                    <XAxis dataKey='month' />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
 
-            Token Overview
-            <BarChart
-                width={1000}
-                height={1000}
-                data={generatedDemoData}
-                margin={{
-                    top: 20, right: 30, left: 20, bottom: 5,
-                }}
-            >
-                <CartesianGrid strokeDasharray='3 3' />
-                <XAxis dataKey='month' />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-
-                {topHolders.map((topHolder, index) => {
-                    return <Bar key={topHolder.displayName} dataKey={topHolder.displayName} stackId='a' fill={generateHexColor()} />
-                })}
-            </BarChart>
-        </div>
+                    {topHolders.map((topHolder, index) => {
+                        return <Bar key={topHolder.displayName} dataKey={topHolder.displayName} stackId='a' fill={generateHexColor()} />;
+                    })}
+                </BarChart>
+            </Container>
+        </Container>
     );
 };

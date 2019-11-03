@@ -12,19 +12,24 @@ import Toolbar from '@material-ui/core/Toolbar';
 import * as React from 'react';
 import {Avatar, Button} from '@material-ui/core';
 import {Link as RouterLink, LinkProps} from 'react-router-dom';
+import styled from "styled-components";
 
 const Link1 = React.forwardRef((props: LinkProps, ref: RefObject<HTMLAnchorElement>) => <RouterLink innerRef={ref} {...props} />);
+
+const StyledAppBar = styled(AppBar)({
+    marginBottom: '2em'
+});
 
 export class Header extends React.Component {
   public render() {
     return (
-      <AppBar position='static' >
+      <StyledAppBar position='static' >
         <Toolbar>
             <Avatar src={'https://icodrops.com/wp-content/uploads/2018/01/Orbs-logo.jpg'}></Avatar>
 
             <Button component={Link1} to={'/token-dist'}>Overview</Button>
         </Toolbar>
-      </AppBar>
+      </StyledAppBar>
     );
   }
 }

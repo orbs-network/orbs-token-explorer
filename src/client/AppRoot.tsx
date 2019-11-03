@@ -7,7 +7,7 @@
  */
 
 import CssBaseline from '@material-ui/core/CssBaseline';
-import { createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
+import { createMuiTheme, StylesProvider } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import * as React from 'react';
 import { BrowserRouter } from 'react-router-dom';
@@ -21,13 +21,13 @@ const baseTheme = createMuiTheme({}); // override your theme here
 
 export const AppRoot = () => (
   <BrowserRouter>
-    <MuiThemeProvider theme={baseTheme}>
+    <StylesProvider injectFirst>
       <CssBaseline />
       <Background appVersion={appVersion} />
       <Container>
           <Header />
           <App />
       </Container>
-    </MuiThemeProvider>
+    </StylesProvider>
   </BrowserRouter>
 );
