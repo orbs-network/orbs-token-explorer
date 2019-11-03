@@ -8,6 +8,7 @@
 
 import CssBaseline from '@material-ui/core/CssBaseline';
 import { createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
+import Container from '@material-ui/core/Container';
 import * as React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
@@ -23,8 +24,10 @@ export const AppRoot = () => (
     <MuiThemeProvider theme={baseTheme}>
       <CssBaseline />
       <Background appVersion={appVersion} />
-      <Header />
-      <App />
+      <Container>
+          <Header />
+          <App />
+      </Container>
     </MuiThemeProvider>
   </BrowserRouter>
 );

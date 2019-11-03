@@ -10,13 +10,16 @@ import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import * as React from 'react';
+import {Avatar, Button, IconButton} from "@material-ui/core";
 
 export class Header extends React.Component {
   public render() {
     return (
-      <AppBar position='static'>
+      <AppBar position='static' >
         <Toolbar>
-          <Typography variant='h5'>ORBS Token Explorer</Typography>
+            <Avatar src={"https://icodrops.com/wp-content/uploads/2018/01/Orbs-logo.jpg"}></Avatar>
+          {/*<Typography variant='h5'>ORBS Token Explorer</Typography>*/}
+            <Button> Overview </Button>
         </Toolbar>
       </AppBar>
     );
