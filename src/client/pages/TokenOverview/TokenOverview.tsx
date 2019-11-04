@@ -2,7 +2,7 @@
 import React from 'react';
 
 import {Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis} from 'recharts';
-import {Container, Divider, Typography} from '@material-ui/core';
+import {Container, Divider, Paper, Typography} from '@material-ui/core';
 import styled from 'styled-components';
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Nov', 'Dec'];
@@ -112,6 +112,35 @@ console.log(generatedDemoData);
 
 const generateHexColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16);
 
+const PagePadder = styled('div')(({theme}) => ({
+    paddingLeft: theme.spacing(2),
+    paddingRight: theme.spacing(2),
+    [theme.breakpoints.up('sm')]: {
+        paddingLeft: theme.spacing(3),
+        paddingRight: theme.spacing(3),
+    },
+    [theme.breakpoints.up('md')]: {
+        paddingLeft: theme.spacing(4),
+        paddingRight: theme.spacing(4),
+    },
+}));
+
+const PageContent = styled('div')(({theme}) => ({
+    display: 'flex',
+    justifyContent: 'center',
+
+    paddingLeft: theme.spacing(2),
+    paddingRight: theme.spacing(2),
+    [theme.breakpoints.up('sm')]: {
+        paddingLeft: theme.spacing(3),
+        paddingRight: theme.spacing(3),
+    },
+    [theme.breakpoints.up('md')]: {
+        paddingLeft: theme.spacing(4),
+        paddingRight: theme.spacing(4),
+    },
+}));
+
 const StyledDivider = styled(Divider)({
     marginTop: '0.5em',
     marginBottom: '0.5em',
@@ -119,10 +148,10 @@ const StyledDivider = styled(Divider)({
 
 export const TokenOverview = () => {
     return (
-        <Container>
+        <PagePadder>
             <Typography variant={'h5'}>Token Overview</Typography>
             <StyledDivider />
-            <Container>
+            <PageContent>
                 <BarChart
                     width={1000}
                     height={1000}
@@ -141,7 +170,7 @@ export const TokenOverview = () => {
                         return <Bar key={topHolder.displayName} dataKey={topHolder.displayName} stackId='a' fill={generateHexColor()} />;
                     })}
                 </BarChart>
-            </Container>
-        </Container>
+            </PageContent>
+        </PagePadder>
     );
 };
