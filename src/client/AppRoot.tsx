@@ -7,27 +7,49 @@
  */
 
 import CssBaseline from '@material-ui/core/CssBaseline';
-import { createMuiTheme, StylesProvider } from '@material-ui/core/styles';
+import { createMuiTheme, StylesProvider, ThemeProvider } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import * as React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
 import { Background } from './components/Background';
 import { Header } from './components/Header';
+import styled, { ThemeProvider as SCThemeProvider} from 'styled-components';
 
 const appVersion = (window as any).appVersion;
 
-const baseTheme = createMuiTheme({}); // override your theme here
+const baseTheme = createMuiTheme({
+    palette: {
+        primary: {
+            main: '#DAE2E6',
+        } ,
+    },
+}); // override your theme here
+
+/**
+ * Ensures the container will take up more of the screen's width
+ */
+const StyledContainer = styled(Container)(() => ({
+    maxWidth: '100%',
+    width: '90%',
+}));
 
 export const AppRoot = () => (
   <BrowserRouter>
     <StylesProvider injectFirst>
-      <CssBaseline />
-      <Background appVersion={appVersion} />
-      <Container>
-          <Header />
-          <App />
-      </Container>
+        <ThemeProvider theme={baseTheme}>
+            <SCThemeProvider theme={baseTheme}>
+                <> {/* DEV_NOTE : O.L : Fragment is here to fix 'SCThemeProvider' children type warning*/}
+                    <CssBaseline />
+                    <Background appVersion={appVersion} />
+                    <StyledContainer >
+                        <Header />
+                        <App />
+                    </StyledContainer>
+                </>
+            </SCThemeProvider>
+        </ThemeProvider>
+
     </StylesProvider>
   </BrowserRouter>
 );

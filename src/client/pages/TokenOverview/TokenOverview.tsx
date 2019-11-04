@@ -112,7 +112,7 @@ console.log(generatedDemoData);
 
 const generateHexColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16);
 
-const PaddedDivider = styled(Divider)({
+const StyledDivider = styled(Divider)({
     marginTop: '0.5em',
     marginBottom: '0.5em',
 });
@@ -121,7 +121,7 @@ export const TokenOverview = () => {
     return (
         <Container>
             <Typography variant={'h5'}>Token Overview</Typography>
-            <PaddedDivider />
+            <StyledDivider />
             <Container>
                 <BarChart
                     width={1000}
