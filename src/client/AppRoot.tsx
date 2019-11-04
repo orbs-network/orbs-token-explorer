@@ -26,6 +26,18 @@ const baseTheme = createMuiTheme({
     },
 }); // override your theme here
 
+const AppStyles = {
+    colors: {
+        darkText: '#67758D',
+        lightText: '#8994A7',
+    }
+};
+
+const themeAndStyle = {
+    ...baseTheme,
+    style: AppStyles,
+};
+
 /**
  * Ensures the container will take up more of the screen's width
  */
@@ -38,7 +50,7 @@ export const AppRoot = () => (
   <BrowserRouter>
     <StylesProvider injectFirst>
         <ThemeProvider theme={baseTheme}>
-            <SCThemeProvider theme={baseTheme}>
+            <SCThemeProvider theme={themeAndStyle}>
                 <> {/* DEV_NOTE : O.L : Fragment is here to fix 'SCThemeProvider' children type warning*/}
                     <CssBaseline />
                     <Background appVersion={appVersion} />

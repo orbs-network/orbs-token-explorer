@@ -14,10 +14,15 @@ import {Avatar, Button} from '@material-ui/core';
 import {Link as RouterLink, LinkProps} from 'react-router-dom';
 import styled from 'styled-components';
 
-const Link1 = React.forwardRef((props: LinkProps, ref: RefObject<HTMLAnchorElement>) => <RouterLink innerRef={ref} {...props} />);
+const StyledRouterLink = styled(RouterLink)(({theme}) => ({
+    color: theme.style.colors.darkText,
+    fontWeight: 'bold',
+}));
+
+const Link1 = React.forwardRef((props: LinkProps, ref: RefObject<HTMLAnchorElement>) => <StyledRouterLink innerRef={ref} {...props} />);
 
 const StyledAppBar = styled(AppBar)({
-    marginBottom: '2em'
+    marginBottom: '1em'
 });
 
 export class Header extends React.Component {
