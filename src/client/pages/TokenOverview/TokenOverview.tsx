@@ -1,10 +1,8 @@
-/* tslint:disable:variable-name */
 import React from 'react';
 
-import {Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis} from 'recharts';
-import {Container, Divider, Paper, Typography} from '@material-ui/core';
+import { Divider, Typography} from '@material-ui/core';
 import styled from 'styled-components';
-import {TopTokenHoldersSection} from "./topTokenHolders/TopTokenHoldersSection";
+import {TopTokenHoldersSection} from './topTokenHolders/TopTokenHoldersSection';
 
 const PagePadder = styled('div')(({theme}) => ({
     paddingLeft: theme.spacing(2),

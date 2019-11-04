@@ -7,7 +7,7 @@
  */
 
 import CssBaseline from '@material-ui/core/CssBaseline';
-import { createMuiTheme, StylesProvider, ThemeProvider } from '@material-ui/core/styles';
+import {createMuiTheme, responsiveFontSizes, StylesProvider, ThemeProvider} from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import * as React from 'react';
 import { BrowserRouter } from 'react-router-dom';
@@ -18,13 +18,13 @@ import styled, { ThemeProvider as SCThemeProvider} from 'styled-components';
 
 const appVersion = (window as any).appVersion;
 
-const baseTheme = createMuiTheme({
+const baseTheme = responsiveFontSizes(createMuiTheme({
     palette: {
         primary: {
             main: '#DAE2E6',
         } ,
     },
-}); // override your theme here
+})); // override your theme here
 
 const AppStyles = {
     colors: {

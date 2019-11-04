@@ -57,6 +57,7 @@ export function buildDemoData() {
     const demoData = months.map(month => {
         const holdersObject = {};
 
+        // Update tokens
         topHolders.forEach(holder => {
             // Update amount
             const monthlyChange = Math.random() + 0.5;
