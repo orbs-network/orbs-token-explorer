@@ -12,10 +12,12 @@ import { ISomeData } from '../../shared/ISomeData';
 import * as pg from 'pg';
 import * as url from 'url';
 
+import mysql from 'mysql';
+
 pg.types.setTypeParser(20, 'text', parseInt);
 pg.types.setTypeParser(1700, parseFloat);
 
-export class PostgresDB implements IDB {
+export class MySqlDB implements IDB {
   public pool: pg.Pool;
 
   constructor(private logger: winston.Logger, private connectionUrl: string) {
@@ -65,17 +67,21 @@ export class PostgresDB implements IDB {
     return rows.length === 0 ? null : rows[0];
   }
 
+  public async getTopTokenHoldersForPastYear() {
+
+  }
+
   private generateConfig(): pg.PoolConfig {
-    const params = url.parse(this.connectionUrl);
-    const auth = params.auth.split(':');
-    return {
-      user: auth[0],
-      password: auth[1],
-      host: params.hostname,
-      port: parseInt(params.port, 10),
-      database: params.pathname.split('/')[1],
-      ssl: process.env.NODE_ENV === 'production' || params.hostname.indexOf('.amazonaws.com') > 0,
-    };
+    // const params = url.parse(this.connectionUrl);
+    // const auth = params.auth.split(':');
+    // return {
+    //   user: auth[0],
+    //   password: auth[1],
+    //   host: params.hostname,
+    //   port: parseInt(params.port, 10),
+    //   database: params.pathname.split('/')[1],
+    //   ssl: process.env.NODE_ENV === 'production' || params.hostname.indexOf('.amazonaws.com') > 0,
+    // };
   }
 
   private async query(queryStr: string, values?: any[]): Promise<any[]> {

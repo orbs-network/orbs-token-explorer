@@ -18,4 +18,6 @@ export interface IDB {
 
   // EXAMPLE //
   storeSomeData(someData: ISomeData): Promise<void>;
+
+  getTopTokenHoldersForPastYear(): Promise<any>;
 }

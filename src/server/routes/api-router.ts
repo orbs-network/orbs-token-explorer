@@ -10,6 +10,8 @@ import * as bodyParser from 'body-parser';
 import { Router } from 'express';
 import { IDB } from '../db/IDB';
 import { ISomeData } from '../../shared/ISomeData';
+import {IAPITopHoldersResponse, ITopHoldersAtTime} from '../../shared/serverResponses/bi/serverBiResponses';
+import {buildDemoData} from './tempDevHelpers';
 
 export function apiRouter(db: IDB) {
   const router = Router();
@@ -27,6 +29,16 @@ export function apiRouter(db: IDB) {
     const { someData } = req.body;
     await db.storeSomeData(someData);
     res.send('ok');
+  });
+
+  router.get<{name: string}>('/api/token-dist/top-holders', async (req, res) => {
+    const topHoldersAtTimePoints = buildDemoData();
+
+    const resObject: IAPITopHoldersResponse = {
+      topHoldersAtTimePoints
+    };
+
+    res.send(resObject);
   });
 
   return router;

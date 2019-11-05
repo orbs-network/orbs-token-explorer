@@ -8,15 +8,15 @@
 
 import { IDB } from './IDB';
 import { InMemoryDB } from './InMemoryDB';
-import { PostgresDB } from './PostgresDB';
+import { MySqlDB } from './MySqlDB';
 import { POSTGRES_URI, DATABASE_TYPE } from '../config';
 import * as winston from 'winston';
 
 export function genDb(logger: winston.Logger): IDB {
   switch (DATABASE_TYPE) {
     case 'POSTGRES':
-    case 'POSTGRESQL':
-      return new PostgresDB(logger, POSTGRES_URI);
+    case 'MYSQL':
+      return new MySqlDB(logger, POSTGRES_URI);
 
     default:
       return new InMemoryDB();
