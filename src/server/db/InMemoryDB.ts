@@ -35,7 +35,7 @@ export class InMemoryDB implements IDB {
     return this.someData;
   }
 
-  public async getTopTokenHoldersForPastYear() {
+  public async getTopTokenHolders() {
     return [];
   }
 }

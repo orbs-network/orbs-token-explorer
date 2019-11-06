@@ -63,9 +63,6 @@ function getRandomArbitrary(min, max) {
 export function buildDemoData(): ITopHoldersAtTime[] {
     const clonedHoldersList = topHoldersList.map(holder => ({...holder}));
 
-    console.warn('**************************************');
-    console.warn('**************************************');
-    console.warn('**************************************');
     const demoData = months.map(month => {
 
         // Update tokens

@@ -9,14 +9,14 @@
 import { IDB } from './IDB';
 import { InMemoryDB } from './InMemoryDB';
 import { MySqlDB } from './MySqlDB';
-import { POSTGRES_URI, DATABASE_TYPE } from '../config';
+import { POSTGRES_URI, DATABASE_TYPE, MYSQL_CREDENTIALS } from '../config';
 import * as winston from 'winston';
 
 export function genDb(logger: winston.Logger): IDB {
   switch (DATABASE_TYPE) {
     case 'POSTGRES':
     case 'MYSQL':
-      return new MySqlDB(logger, POSTGRES_URI);
+      return new MySqlDB(logger, MYSQL_CREDENTIALS.host, MYSQL_CREDENTIALS.user, MYSQL_CREDENTIALS.password, MYSQL_CREDENTIALS.database);
 
     default:
       return new InMemoryDB();

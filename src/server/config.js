@@ -12,6 +12,7 @@ const findUp = require('find-up');
 
 if (IS_DEV) {
   require('dotenv').config({ path: findUp.sync('.env') });
+  require('dotenv').config({ path: findUp.sync('.env_secrets') });
 }
 
 const { version } = require(findUp.sync('package.json'));
@@ -36,6 +37,16 @@ const ROLLBAR_ACCESS_TOKEN_SERVER = process.env.ROLLBAR_ACCESS_TOKEN_SERVER;
 // database
 const DATABASE_TYPE = process.env.DATABASE_TYPE;
 const POSTGRES_URI = process.env.POSTGRES_URI;
+const mySqlHost = process.env.MYSQL_HOST;
+const mySqlUser = process.env.MYSQL_USER;
+const mySqlPassword = process.env.MYSQL_PASSWORD;
+const mySqlDbName = process.env.MYSQL_DB_NAME;
+const MYSQL_CREDENTIALS = {
+  host: mySqlHost,
+  user: mySqlUser,
+  password: mySqlPassword,
+  database: mySqlDbName,
+};
 
 module.exports = {
   APP_VERSION,
@@ -50,4 +61,5 @@ module.exports = {
   WEBPACK_PORT,
   DATABASE_TYPE,
   POSTGRES_URI,
+  MYSQL_CREDENTIALS,
 };
