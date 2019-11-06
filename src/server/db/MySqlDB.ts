@@ -10,7 +10,6 @@ import * as winston from 'winston';
 import { IDB } from './IDB';
 import { ISomeData } from '../../shared/ISomeData';
 import * as pg from 'pg';
-import * as url from 'url';
 
 import {Connection, createConnection} from 'mysql';
 
@@ -70,27 +69,54 @@ export class MySqlDB implements IDB {
   }
 
   public async getTopTokenHolders() {
-    const query = `select recipient, in_orbs(get_stake(recipient))
-from (SELECT source as recipient FROM transfers
-    UNION
-    SELECT recipient FROM transfers) all_unique_addresses
-order by get_stake(recipient) desc
-limit 20`;
+    const groupByMonths = '%m/%Y';
 
-    return new Promise((res, reject) => {
-      this.dbConnection.query(query, (err, results) => {
-        if (err) {
+    // find all relevant blocks data
+    const relevantBlockData = await this.fetchLatestBlocksDataForRange(0, groupByMonths);
 
-          return reject(err);
-        }
+    const query =  `Select recipient, in_orbs(get_stake(recipient))
+                    FROM (SELECT source as recipient FROM transfers
+                    UNION
+                    SELECT recipient FROM transfers) all_unique_addresses
+                    order by get_stake(recipient) desc
+                    limit 30`;
 
-        console.warn('results', results);
-        res(results);
-      });
+    const dbRes = await this.mappedQuery<{name: string}>(query, row => {
+      return {
+        name: row.recipient,
+      };
     });
+
+    return dbRes;
+  }
+
+  /**
+   * returns data about the latest block for each given time unit since the given start timestamp.
+   */
+  private async fetchLatestBlocksDataForRange(startingTimeStamp: number, dateGroupFormat: string) {
+    const query = ` SELECT MAX(block) as blockNumber, MAX(blockTime) as blockTime, DATE_FORMAT(FROM_UNIXTIME(blockTime), ?) as date
+                    FROM transfers
+                    WHERE blockTime > ?
+                    GROUP BY DATE_FORMAT(FROM_UNIXTIME(blockTime), ?)
+                    ORDER BY blockTime DESC;
+    `;
+
+    const values = [dateGroupFormat, startingTimeStamp, dateGroupFormat];
+
+    const blocksData = await this.mappedQuery<{ blockNumber: number, blockTime: number, readableDate: string }>(query, row => {
+      return {
+        blockNumber: row.blockNumber,
+        blockTime: row.blockTime,
+        readableDate: row.date
+      };
+    }, values);
+
+    return blocksData;
   }
 
   private buildConnection( host: string, user: string, password: string, database: string)  {
+    this.logger.info('Building MySQL connection');
+
     const connection = createConnection({
       host,
       user,
@@ -109,10 +135,10 @@ limit 20`;
       this.logger.error(`db error ${err}`);
 
       if (err.code === 'PROTOCOL_CONNECTION_LOST') {   // Connection to the MySQL server is usually
-        this.logger.error('Ay ya yay');
+        this.logger.warn('MySql connection lost, will try to rebuild connection.');
         this.buildConnection(host, user, password, host);   // lost due to either server restart, or a
       } else {                                        // connection idle timeout (the wait_timeout
-        this.logger.error(`error code : ${err.code}`)
+        this.logger.error(`error code : ${err.code}`);
         throw err;                                    // server variable configures this)
       }
     });
@@ -121,15 +147,23 @@ limit 20`;
   }
 
   private async query(queryStr: string, values?: any[]): Promise<any> {
-    // const client: pg.PoolClient = await this.pool.connect();
-    // try {
-    //   const result: pg.QueryResult = await client.query(queryStr, values);
-    //   return result.rows;
-    // } catch (e) {
-    //   console.log(`Query error: ${e} query:${queryStr}`);
-    //   throw e;
-    // } finally {
-    //   client.release();
-    // }
+    return new Promise(((resolve, reject) => {
+      this.dbConnection.query(queryStr, values, (err, dbRows) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(dbRows);
+      });
+    }));
   }
+
+  private async mappedQuery<T>(queryStr: string, rowsMapper?: (row: any) => T,  values?: any[] ): Promise<T[]> {
+    const dbRes = await this.query(queryStr, values);
+
+    const results = dbRes.map(row => rowsMapper(row));
+
+    return results;
+  }
+
 }
