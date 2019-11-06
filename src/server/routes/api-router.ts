@@ -32,7 +32,7 @@ export function apiRouter(db: IDB) {
   });
 
   router.get<{name: string}>('/api/token-dist/top-holders', async (req, res) => {
-    const topHoldersAtTimePoints = getTopHolders();
+    const topHoldersAtTimePoints = await db.getTopTokenHolders();
 
     const resObject: IAPITopHoldersResponse = {
       topHoldersAtTimePoints

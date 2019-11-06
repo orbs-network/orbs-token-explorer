@@ -10,8 +10,10 @@ import * as winston from 'winston';
 import { IDB } from './IDB';
 import { ISomeData } from '../../shared/ISomeData';
 import * as pg from 'pg';
+import Moment from 'moment';
 
 import {Connection, createConnection} from 'mysql';
+import {ITopHoldersAtTime} from '../../shared/serverResponses/bi/serverBiResponses';
 
 pg.types.setTypeParser(20, 'text', parseInt);
 pg.types.setTypeParser(1700, parseFloat);
@@ -69,45 +71,81 @@ export class MySqlDB implements IDB {
   }
 
   public async getTopTokenHolders() {
+    const minHolding = 1_000_000;
     const groupByMonths = '%m/%Y';
+    const startTimeStamp = Moment.utc().subtract(1, 'year').startOf('month').unix();
 
     // find all relevant blocks data
-    const relevantBlockData = await this.fetchLatestBlocksDataForRange(0, groupByMonths);
+    const relevantBlockData = await this.fetchLatestBlocksDataForRange(startTimeStamp, groupByMonths);
 
-    const query =  `Select recipient, in_orbs(get_stake(recipient))
-                    FROM (SELECT source as recipient FROM transfers
-                    UNION
-                    SELECT recipient FROM transfers) all_unique_addresses
-                    order by get_stake(recipient) desc
-                    limit 30`;
+    const all: ITopHoldersAtTime[] = await Promise.all(relevantBlockData.map(async blockData => {
+      const topHoldersForBlock =  await this.fetchTopHoldersByBlock(blockData.blockNumber, minHolding);
 
-    const dbRes = await this.mappedQuery<{name: string}>(query, row => {
-      return {
-        name: row.recipient,
+      const topHOlderForTimeUnit: ITopHoldersAtTime = {
+        totalTokens: blockData.totalCirculation,
+        topHolders: topHoldersForBlock.map(holderForBlock => ({
+          tokens: holderForBlock.tokens,
+          displayName: holderForBlock.address,
+          address: holderForBlock.address,
+          isOrbsAddress: false
+        })),
+        timestamp: blockData.blockTime,
       };
-    });
 
-    return dbRes;
+      return topHOlderForTimeUnit;
+    }));
+
+    return all;
+  }
+
+  private async fetchTopHoldersByBlock(blockNumber: number, minHolding: number) {
+    const query = ` SELECT recipient,
+                           in_orbs(get_stake_at_block(recipient, :blockNumber)) as tokens,
+                           is_guardian_at_block(recipient,:blockNumber) as isGuardian
+                    FROM (SELECT source as recipient
+                          FROM transfers
+                          UNION
+                          SELECT recipient
+                          FROM transfers) all_unique_addresses
+                    WHERE in_orbs(get_stake_at_block(recipient, :blockNumber)) > :minHolding
+                    ORDER BY get_stake_at_block(recipient, :blockNumber) desc`;
+
+    const values = {
+      blockNumber,
+      minHolding,
+    };
+
+    return this.mappedQuery<{ address: string, tokens: number, isGuardian: boolean}>(query, row => ({
+      address: row.recipient,
+      tokens: row.tokens,
+      isGuardian: !!row.isGuardian,
+    }), values);
   }
 
   /**
    * returns data about the latest block for each given time unit since the given start timestamp.
    */
   private async fetchLatestBlocksDataForRange(startingTimeStamp: number, dateGroupFormat: string) {
-    const query = ` SELECT MAX(block) as blockNumber, MAX(blockTime) as blockTime, DATE_FORMAT(FROM_UNIXTIME(blockTime), ?) as date
+    const hardCodedOrbsInCirculation = 2_000_000_000;
+
+    const query = ` SELECT MAX(block) as blockNumber, MAX(blockTime) as blockTime, DATE_FORMAT(FROM_UNIXTIME(blockTime), :dateFormat) as date
                     FROM transfers
-                    WHERE blockTime > ?
-                    GROUP BY DATE_FORMAT(FROM_UNIXTIME(blockTime), ?)
+                    WHERE blockTime > :startingTimeStamp
+                    GROUP BY DATE_FORMAT(FROM_UNIXTIME(blockTime), :dateFormat)
                     ORDER BY blockTime DESC;
     `;
 
-    const values = [dateGroupFormat, startingTimeStamp, dateGroupFormat];
+    const values = {
+      dateFormat: dateGroupFormat,
+      startingTimeStamp,
+    };
 
-    const blocksData = await this.mappedQuery<{ blockNumber: number, blockTime: number, readableDate: string }>(query, row => {
+    const blocksData = await this.mappedQuery<{ blockNumber: number, blockTime: number, readableDate: string, totalCirculation: number }>(query, row => {
       return {
         blockNumber: row.blockNumber,
         blockTime: row.blockTime,
-        readableDate: row.date
+        readableDate: row.date,
+        totalCirculation: hardCodedOrbsInCirculation,
       };
     }, values);
 
@@ -143,10 +181,21 @@ export class MySqlDB implements IDB {
       }
     });
 
+    connection.config.queryFormat = function(query, values) {
+      if (!values) { return query; }
+
+      return query.replace(/\:(\w+)/g, function(txt, key) {
+        if (values.hasOwnProperty(key)) {
+          return this.escape(values[key]);
+        }
+        return txt;
+      }.bind(this));
+    };
+
     this.dbConnection = connection;
   }
 
-  private async query(queryStr: string, values?: any[]): Promise<any> {
+  private async query(queryStr: string, values?: any): Promise<any> {
     return new Promise(((resolve, reject) => {
       this.dbConnection.query(queryStr, values, (err, dbRows) => {
         if (err) {
@@ -158,7 +207,7 @@ export class MySqlDB implements IDB {
     }));
   }
 
-  private async mappedQuery<T>(queryStr: string, rowsMapper?: (row: any) => T,  values?: any[] ): Promise<T[]> {
+  private async mappedQuery<T>(queryStr: string, rowsMapper?: (row: any) => T,  values?: {} ): Promise<T[]> {
     const dbRes = await this.query(queryStr, values);
 
     const results = dbRes.map(row => rowsMapper(row));
