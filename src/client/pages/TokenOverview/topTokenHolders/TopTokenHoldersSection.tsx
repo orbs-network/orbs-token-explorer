@@ -5,6 +5,7 @@ import {Typography} from '@material-ui/core';
 import { ClipLoader } from 'react-spinners';
 import {ITopHoldersAtTime} from '../../../../shared/serverResponses/bi/serverBiResponses';
 import moment from 'moment';
+import _ from 'lodash';
 
 interface IProps {
     isLoading: boolean;
@@ -23,12 +24,15 @@ const SectionHeader = styled(Typography)(({theme}) => ({
 export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
     const { isLoading, topHoldersByTimeList } = props;
 
-    const barsData = useMemo(() => {
-       if (! topHoldersByTimeList) {
-           return [];
+    const { barsData, uniqueNames } = useMemo(() => {
+       if (!topHoldersByTimeList) {
+           return {
+               barsData: [],
+               uniqueNames: [],
+           };
        }
 
-       return  toBarData(topHoldersByTimeList);
+       return toBarData(topHoldersByTimeList);
     }, [topHoldersByTimeList]);
 
     return (
@@ -52,7 +56,7 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
                     <Tooltip />
                     {/*<Legend />*/}
 
-                    {Object.keys(barsData[0]).filter(k => k !== 'timeUnitName').map((topHolderName, index) => {
+                    {uniqueNames.map((topHolderName, index) => {
                         return <Bar key={topHolderName} dataKey={topHolderName} stackId='a' fill={colorByIndex(index)} />;
                     })}
                 </BarChart>
@@ -61,11 +65,11 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
     );
 };
 
-function toBarData(topHoldersByTimes: ITopHoldersAtTime[]) {
+function toBarData(topHoldersByTimes: ITopHoldersAtTime[]): { barsData: object[], uniqueNames: string[]} {
     const barsData = topHoldersByTimes.map(topHoldersByTime => {
         const totalTokensPerTimeFrame = topHoldersByTime.totalTokens;
 
-        const timeUnitName = moment.utc(topHoldersByTime.timestamp * 1000).format('MMM');
+        const timeUnitName = moment.utc(topHoldersByTime.timestamp * 1000).format('MMM/YY');
 
         const barData = {
             timeUnitName,
@@ -74,13 +78,19 @@ function toBarData(topHoldersByTimes: ITopHoldersAtTime[]) {
         topHoldersByTime.topHolders.forEach(topHolder => {
             const percentageOfStake = (topHolder.tokens / totalTokensPerTimeFrame) * 100;
 
-            barData[topHolder.displayName] = percentageOfStake;
+            barData[topHolder.displayName] = percentageOfStake.toFixed(4);
         });
 
         return barData;
     });
 
-    return barsData;
+    const allEntities = (topHoldersByTimes.map(topHoldersByTime => topHoldersByTime.topHolders.map(topHolder => topHolder.displayName))).flat(2);
+    const uniqEntities = new Set<string>(allEntities);
+
+    return {
+        barsData,
+        uniqueNames: Array.from(uniqEntities.values()),
+    };
 }
 
 const colorsToUse = [
@@ -153,10 +163,9 @@ const yellowToGreenVisualization = [
 '#B8E18B',
 '#CCEA8A',
 '#E0F38B'
-]
-
+];
 
 function colorByIndex(index: number) {
-    return colorsToUse[index];
+    return colorsToUse[index % colorsToUse.length];
     // return index < 10 ? redColorHues[index] : yellowToGreenVisualization[index];
 }

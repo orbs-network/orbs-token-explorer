@@ -1,11 +1,11 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Button, Divider, Typography} from '@material-ui/core';
 import styled from 'styled-components';
 import {TopTokenHoldersSection} from './topTokenHolders/TopTokenHoldersSection';
 import {useBoolean, useNumber} from 'react-hanger';
 import {OrbsBiService} from '../../services/OrbsBiService';
-import {ITopHoldersAtTime} from '../../../shared/serverResponses/bi/serverBiResponses';
+import {IHolderStake, ITopHoldersAtTime} from '../../../shared/serverResponses/bi/serverBiResponses';
 
 const PagePadder = styled('div')(({theme}) => ({
     paddingLeft: theme.spacing(2),
@@ -41,26 +41,54 @@ const orbsBiService = new OrbsBiService();
 
 export const TokenOverview = () => {
     const isLoadingGraphData = useBoolean(true);
-    const [topHoldersByTimes, setTopHoldersByTimes] = useState<ITopHoldersAtTime[]>(null);
+    const maximumTokens = useNumber(1_000_000_000);
+    const minPercentage = useNumber(0.5);
+    const [topHoldersByTimesFromServer, setTopHoldersByTimesFromServer] = useState<ITopHoldersAtTime[]>(null);
+
+    const holderFiltering = useCallback((holder: IHolderStake, totalOrbsInCirculation: number) => {
+        const minTokens = (totalOrbsInCirculation / 100) * minPercentage.value;
+
+        return (holder.tokens < maximumTokens.value) && (holder.tokens > minTokens);
+    }, [minPercentage.value, maximumTokens.value]);
+
+    const topHoldersByTimesForDisplay: ITopHoldersAtTime[] = useMemo(() => {
+        if (!topHoldersByTimesFromServer) {
+            return [];
+        }
+
+        return topHoldersByTimesFromServer.map(topHoldersAtTIme => {
+            // Filter all holders based on conditions
+            const filteredHolders = topHoldersAtTIme.topHolders.filter(topHolder => holderFiltering(topHolder, topHoldersAtTIme.totalTokens));
+            const topHoldersAtTImeClone = {...topHoldersAtTIme};
+            topHoldersAtTImeClone.topHolders = filteredHolders;
+
+            return topHoldersAtTImeClone;
+        });
+    }, [topHoldersByTimesFromServer]);
 
     // Barbaric server fetch
     useEffect( () => {
         async function fetchData() {
             const res = await orbsBiService.getTopHoldersForPastYear(20);
 
-            setTopHoldersByTimes(res.topHoldersAtTimePoints);
+            const { topHoldersAtTimePoints } = res;
+
+            topHoldersAtTimePoints.sort((a, b) => a.timestamp - b.timestamp);
+
+            setTopHoldersByTimesFromServer(topHoldersAtTimePoints);
+
             isLoadingGraphData.setFalse();
         }
 
         fetchData().catch(e => alert(e));
-    }, [isLoadingGraphData, orbsBiService, setTopHoldersByTimes]);
+    }, [isLoadingGraphData, orbsBiService, setTopHoldersByTimesFromServer]);
 
     return (
         <PagePadder >
             <PageHeader variant={'h5'} >Token Overview</PageHeader>
             <StyledDivider />
             <PageContent>
-                <TopTokenHoldersSection isLoading={isLoadingGraphData.value} topHoldersByTimeList={topHoldersByTimes}/>
+                <TopTokenHoldersSection isLoading={isLoadingGraphData.value} topHoldersByTimeList={topHoldersByTimesForDisplay}/>
             </PageContent>
         </PagePadder>
     );
