@@ -3,6 +3,8 @@ export interface IHolderStake {
     displayName: string;
     tokens: number;
     isOrbsAddress: boolean;
+    isGuardian: boolean;
+    isExchange: boolean;
 }
 
 export interface ITopHoldersAtTime {

@@ -10,8 +10,13 @@ import * as bodyParser from 'body-parser';
 import { Router } from 'express';
 import { IDB } from '../db/IDB';
 import { ISomeData } from '../../shared/ISomeData';
-import {IAPITopHoldersResponse} from '../../shared/serverResponses/bi/serverBiResponses';
+import {IAPITopHoldersResponse, ITopHoldersAtTime} from '../../shared/serverResponses/bi/serverBiResponses';
 import {getTopHolders} from './tokenDistributionHandler';
+
+import { devRes } from '../db/topTokenHolders';
+
+// let decCache: ITopHoldersAtTime[] = devRes;
+let decCache: ITopHoldersAtTime[] = null;
 
 export function apiRouter(db: IDB) {
   const router = Router();
@@ -32,7 +37,15 @@ export function apiRouter(db: IDB) {
   });
 
   router.get<{name: string}>('/api/token-dist/top-holders', async (req, res) => {
-    const topHoldersAtTimePoints = await db.getTopTokenHolders();
+    // const topHoldersAtTimePoints = await db.getTopTokenHolders();
+
+    if (!decCache) {
+      decCache = await db.getTopTokenHolders();
+    }
+
+    const topHoldersAtTimePoints = decCache;
+
+    // const topHoldersAtTimePoints = decCache;
 
     const resObject: IAPITopHoldersResponse = {
       topHoldersAtTimePoints

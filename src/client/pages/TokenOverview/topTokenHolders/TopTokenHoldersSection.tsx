@@ -38,8 +38,8 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
     }, [topHoldersByTimeList]);
 
     return (
-        <Section style={{ height: '30em'}}>
-            <SectionHeader variant={'h6'} >Top 20 token holders stake change</SectionHeader>
+        <Section style={{ height: '50em'}}>
+            <SectionHeader variant={'h6'} >Top token holders as percentage of circulation</SectionHeader>
 
             <ClipLoader loading={isLoading} />
 
@@ -53,7 +53,7 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
                 >
                     {/*<CartesianGrid strokeDasharray='3 3' />*/}
                     <XAxis dataKey='timeUnitName' />
-                    <YAxis domain={[0, 100]}/>
+                    <YAxis domain={[0, 100]} />
                     <Tooltip />
                     {/*<Legend />*/}
 

@@ -85,9 +85,11 @@ export class MySqlDB implements IDB {
         totalTokens: blockData.totalCirculation,
         topHolders: topHoldersForBlock.map(holderForBlock => ({
           tokens: holderForBlock.tokens,
-          displayName: holderForBlock.address,
+          displayName: holderForBlock.name || holderForBlock.address,
           address: holderForBlock.address,
-          isOrbsAddress: false
+          isOrbsAddress: holderForBlock.type === 'OrbsLtd',
+          isGuardian: holderForBlock.isGuardian,
+          isExchange: holderForBlock.type === 'Exchange',
         })),
         timestamp: blockData.blockTime,
       };
@@ -102,14 +104,22 @@ export class MySqlDB implements IDB {
   }
 
   private async fetchTopHoldersByBlock(blockNumber: number, minHolding: number) {
+    const ORBS_HQ = 'Orbs HQ';
+    const EXCHANGE = 'Exchange';
+
     const query = ` SELECT recipient,
                            in_orbs(get_stake_at_block(recipient, :blockNumber)) as tokens,
-                           is_guardian_at_block(recipient,:blockNumber) as isGuardian
+                           is_guardian_at_block(recipient,:blockNumber) as isGuardian,
+                           knwn_adrs.name as name,
+                           knwn_adrs.region as addressType
                     FROM (SELECT source as recipient
                           FROM transfers
                           UNION
                           SELECT recipient
                           FROM transfers) all_unique_addresses
+                          LEFT JOIN known_addresses as knwn_adrs
+                            ON knwn_adrs.address = all_unique_addresses.recipient
+                            AND knwn_adrs.region in ('${ORBS_HQ}', '${EXCHANGE}')
                     WHERE in_orbs(get_stake_at_block(recipient, :blockNumber)) > :minHolding
                     ORDER BY get_stake_at_block(recipient, :blockNumber) desc`;
 
@@ -118,8 +128,10 @@ export class MySqlDB implements IDB {
       minHolding,
     };
 
-    return this.mappedQuery<{ address: string, tokens: number, isGuardian: boolean}>(query, row => ({
+    return this.mappedQuery<{ address: string, name: string, type: 'OrbsLtd' | 'Exchange' | 'Unknown', tokens: number, isGuardian: boolean}>(query, row => ({
       address: row.recipient,
+      name: row.name,
+      type: row.addressType ? (row.addressType === ORBS_HQ ? 'OrbsLtd' : 'Exchange' ) : 'Unknown',
       tokens: row.tokens,
       isGuardian: !!row.isGuardian,
     }), values);
@@ -129,7 +141,8 @@ export class MySqlDB implements IDB {
    * returns data about the latest block for each given time unit since the given start timestamp.
    */
   private async fetchLatestBlocksDataForRange(startingTimeStamp: number, dateGroupFormat: string) {
-    const hardCodedOrbsInCirculation = 2_000_000_000;
+    // const hardCodedOrbsInCirculation = 2_000_000_000;
+    const hardCodedOrbsInCirculation = 1_890_000_000;
 
     const query = ` SELECT MAX(block) as blockNumber, MAX(blockTime) as blockTime, DATE_FORMAT(FROM_UNIXTIME(blockTime), :dateFormat) as date
                     FROM transfers

@@ -42,8 +42,10 @@ const orbsBiService = new OrbsBiService();
 
 export const TokenOverview = () => {
     const isLoadingGraphData = useBoolean(true);
-    const filterOrbsLtd = useBoolean(true);
-    const showOnlyGuardians = useBoolean(false);
+    const showOrbsLtd = useBoolean(false);
+    const showGuardians = useBoolean(true);
+    const showExchanges = useBoolean(true);
+    const showUnknowns = useBoolean(true);
     const maximumTokens = useNumber(1_000_000_000);
     const minPercentage = useNumber(1);
     const [topHoldersByTimesFromServer, setTopHoldersByTimesFromServer] = useState<ITopHoldersAtTime[]>(null);
@@ -54,9 +56,13 @@ export const TokenOverview = () => {
         return (
             (holder.tokens < maximumTokens.value) && // Less than maximum value
             (holder.tokens > minTokens) && // More than the minimum tokens
-            !(filterOrbsLtd.value && holder.isOrbsAddress) // Filters orbs addresses
+            (showOrbsLtd.value ? true : !holder.isOrbsAddress) // Filters orbs addresses
+            && (showGuardians.value ? true : !holder.isGuardian) // Filters orbs addresses
+            && (showGuardians.value ? true : !holder.isGuardian) // Filters guardians
+            && (showExchanges.value ? true : !holder.isExchange) // Filters exchanges
+            && (showUnknowns.value ? true : (holder.isGuardian || holder.isExchange || holder.isOrbsAddress)) // Show unknowns
         );
-    }, [filterOrbsLtd.value, minPercentage.value, maximumTokens.value, showOnlyGuardians.value]);
+    }, [showOrbsLtd.value, minPercentage.value, maximumTokens.value, showGuardians.value, showUnknowns.value, showExchanges.value]);
 
     const topHoldersByTimesForDisplay: ITopHoldersAtTime[] = useMemo(() => {
         if (!topHoldersByTimesFromServer) {
@@ -95,19 +101,41 @@ export const TokenOverview = () => {
             <StyledDivider />
             <PageContent>
                 <FormGroup row>
+                    {/* Show Orbs LTD */}
                     <FormControlLabel control={<Switch
-                        checked={filterOrbsLtd.value}
-                        onChange={filterOrbsLtd.toggle}
+                        checked={showOrbsLtd.value}
+                        onChange={showOrbsLtd.toggle}
                         color='secondary'
-                    />} label={'Filter Orbs LTD'}/>
+                    />} label={'Orbs LTD'}/>
 
+                    {/* Show Guardians */}
+                    <FormControlLabel control={<Switch
+                        checked={showGuardians.value}
+                        onChange={showGuardians.toggle}
+                        color='secondary'
+                    />} label={'Guardians'}/>
+
+                    {/* Show Exchanges */}
+                    <FormControlLabel control={<Switch
+                        checked={showExchanges.value}
+                        onChange={showExchanges.toggle}
+                        color='secondary'
+                    />} label={'Exchanges'}/>
+
+                    {/* Unknowns */}
+                    <FormControlLabel control={<Switch
+                        checked={showUnknowns.value}
+                        onChange={showUnknowns.toggle}
+                        color='secondary'
+                    />} label={'Unknowns'}/>
+
+                    {/* Min percentage from stake */}
                     <FormControlLabel control={
                         <Slider
                         defaultValue={minPercentage.value}
                         value={minPercentage.value}
 
-                        // onChangeCommitted={(e, value) => minPercentage.setValue(value)}
-                        onChange={(e, value) => minPercentage.setValue(value)}
+                        onChange={(_, value) => minPercentage.setValue(value)}
 
                         valueLabelDisplay={'auto'}
 
@@ -115,8 +143,10 @@ export const TokenOverview = () => {
                         min={0.5}
                         max={5}
                         step={0.1}
+                        marks={[{ label: `${0.5}%`, value: 0.5 }, {  label: 5, value: 5}]}
                     />}
-                                      label={'Min stake %'}
+                                      label={'Min % of circulation'}
+                                      labelPlacement={'top'}
                                       style={{width: '30em'}}
                     />
                 </FormGroup>
