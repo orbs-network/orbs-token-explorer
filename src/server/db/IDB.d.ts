@@ -7,6 +7,7 @@
  */
 
 import { ISomeData } from '../../shared/ISomeData';
+import {ITopHoldersAtTime} from '../../shared/serverResponses/bi/serverBiResponses';
 
 export interface IDB {
   rebuild(): Promise<void>;
@@ -19,5 +20,5 @@ export interface IDB {
   // EXAMPLE //
   storeSomeData(someData: ISomeData): Promise<void>;
 
-  getTopTokenHolders(): Promise<any>;
+  getTopTokenHolders(): Promise<ITopHoldersAtTime[]>;
 }

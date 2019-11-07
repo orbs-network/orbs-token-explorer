@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
 import {Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import styled from 'styled-components';
-import {Typography} from '@material-ui/core';
+import {colors, Typography} from '@material-ui/core';
 import { ClipLoader } from 'react-spinners';
 import {ITopHoldersAtTime} from '../../../../shared/serverResponses/bi/serverBiResponses';
 import moment from 'moment';
-import _ from 'lodash';
+import Color from 'color';
+import toMaterialStyle from 'material-color-hash';
+import genRandom from 'random-seed';
 
 interface IProps {
     isLoading: boolean;
@@ -50,20 +52,29 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
                     // stackOffset={'expand'}
                 >
                     {/*<CartesianGrid strokeDasharray='3 3' />*/}
-                    {/*<XAxis dataKey='month' />*/}
-                    <XAxis dataKey='timeUnitName' domain={[0, 100]}/>
-                    <YAxis />
+                    <XAxis dataKey='timeUnitName' />
+                    <YAxis domain={[0, 100]}/>
                     <Tooltip />
                     {/*<Legend />*/}
 
                     {uniqueNames.map((topHolderName, index) => {
-                        return <Bar key={topHolderName} dataKey={topHolderName} stackId='a' fill={colorByIndex(index)} />;
+                        return <Bar key={topHolderName} dataKey={topHolderName} stackId='a' fill={colorFromHolderName(topHolderName)} />;
                     })}
                 </BarChart>
             </ResponsiveContainer>}
         </Section>
     );
 };
+
+function colorFromHolderName(name: string): string {
+    const rand = genRandom.create(name);
+    // DEV_NOTE : starting from 200 to prevent very light (unreadable) colors
+    // @ts-ignore
+    const shade: 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900  = (rand(7) + 2 ) * 100;
+    const color = toMaterialStyle(name, shade).backgroundColor;
+
+    return color;
+}
 
 function toBarData(topHoldersByTimes: ITopHoldersAtTime[]): { barsData: object[], uniqueNames: string[]} {
     const barsData = topHoldersByTimes.map(topHoldersByTime => {

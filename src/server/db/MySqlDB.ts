@@ -95,6 +95,9 @@ export class MySqlDB implements IDB {
       return topHOlderForTimeUnit;
     }));
 
+    // Sorts by time, ascending
+    all.sort((a, b) => a.timestamp - b.timestamp);
+
     return all;
   }
 
