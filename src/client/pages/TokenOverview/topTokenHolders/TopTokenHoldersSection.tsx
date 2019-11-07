@@ -1,5 +1,15 @@
 import React, { useMemo } from 'react';
-import {Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Legend,
+    Tooltip,
+    XAxis,
+    YAxis,
+    ResponsiveContainer,
+    TooltipPayload, LabelList
+} from 'recharts';
 import styled from 'styled-components';
 import {colors, Typography} from '@material-ui/core';
 import { ClipLoader } from 'react-spinners';
@@ -54,17 +64,22 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
                     {/*<CartesianGrid strokeDasharray='3 3' />*/}
                     <XAxis dataKey='timeUnitName' />
                     <YAxis domain={[0, 100]} />
-                    <Tooltip />
+                    <Tooltip formatter={toolTipFormatter} />
                     {/*<Legend />*/}
 
                     {uniqueNames.map((topHolderName, index) => {
-                        return <Bar key={topHolderName} dataKey={topHolderName} stackId='a' fill={colorFromHolderName(topHolderName)} />;
+                        return (<Bar key={topHolderName} dataKey={topHolderName} stackId='a' fill={colorFromHolderName(topHolderName)} />);
                     })}
                 </BarChart>
             </ResponsiveContainer>}
         </Section>
     );
 };
+
+function toolTipFormatter(value: number, name: string,
+                          entry: TooltipPayload, index: number) {
+    return value.toFixed(3);
+}
 
 function colorFromHolderName(name: string): string {
     const rand = genRandom.create(name);
@@ -90,6 +105,7 @@ function toBarData(topHoldersByTimes: ITopHoldersAtTime[]): { barsData: object[]
             const percentageOfStake = (topHolder.tokens / totalTokensPerTimeFrame) * 100;
 
             barData[topHolder.displayName] = percentageOfStake.toFixed(4);
+            barData[topHolder.displayName] = percentageOfStake;
         });
 
         return barData;
