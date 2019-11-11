@@ -6,16 +6,19 @@ import {
     XAxis,
     YAxis,
     ResponsiveContainer,
-    TooltipPayload, PieChart, Pie, Cell
+    TooltipPayload, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import styled from 'styled-components';
-import {colors, Typography} from '@material-ui/core';
+import {colors, Icon, Snackbar, SnackbarContent, Typography} from '@material-ui/core';
 import { ClipLoader } from 'react-spinners';
 import {ITopHoldersAtTime} from '../../../../shared/serverResponses/bi/serverBiResponses';
 import moment from 'moment';
 import toMaterialStyle from 'material-color-hash';
 import genRandom from 'random-seed';
-import { useStateful } from 'react-hanger';
+import { useStateful, useBoolean } from 'react-hanger';
+import copyTextToClipboard from 'copy-text-to-clipboard';
+import Green from '@material-ui/core/colors/green';
+import AssignmentTwoToneIcon from '@material-ui/icons/AssignmentTwoTone';
 
 interface IProps {
     isLoading: boolean;
@@ -29,6 +32,10 @@ const Section = styled('div')({
 
 const SectionHeader = styled(Typography)(({theme}) => ({
     color: theme.style.colors.lightText,
+}));
+
+const SuccessSnackbarContent = styled(SnackbarContent)(({theme}) => ({
+    backgroundColor: Green[600],
 }));
 
 const TINE_UNIT_NAME_KEY = 'timeUnitName';
@@ -59,7 +66,7 @@ const useBarCharts = (barsData, uniqueNames: string[], barClickHandler) => {
     return DisplayAsBarChart;
 };
 
-const usePieChart = singleTImeUnitObject => {
+const usePieChart = (singleTImeUnitObject, copyToClipboard: (text: string) => void) => {
     // Convert the 'data' to 'name'-'value' objects to fit the pie chart.
     const nameValuePairs = useMemo(() => {
         if (!singleTImeUnitObject) {
@@ -69,21 +76,28 @@ const usePieChart = singleTImeUnitObject => {
         return Object.entries(singleTImeUnitObject.data).map(([k, v], i) => ({  name: k, value: v }));
     }, [singleTImeUnitObject]);
 
+    const onCellClickBuilder = useCallback(address => {
+        return () => {
+            copyToClipboard(address);
+        };
+    }, []);
+
     if (!nameValuePairs.length) {
         return <div> No holders </div>;
     }
 
     return <PieChart >
-        <Pie data={nameValuePairs} dataKey='value' nameKey='name' cx='50%' cy='50%' outerRadius={'40em'} fill='#8884d8' >
-            {nameValuePairs.map((entry, i) => (<Cell key={`cell-${i}`} fill={colorFromHolderName(entry.name)} />))}
+        <Pie  animationBegin={0} animationDuration={1000} data={nameValuePairs} dataKey='value' nameKey='name' cx='50%' cy='50%' outerRadius={'40em'} fill='#8884d8' label >
+            {nameValuePairs.map((entry, i) => (<Cell key={`cell-${i}`} fill={colorFromHolderName(entry.name)} stroke={'black'} onClick={onCellClickBuilder(entry.name)} />))}
         </Pie>
-        <div>No</div>
+        <Tooltip />
     </PieChart>;
 };
 
 export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
     const { isLoading, topHoldersByTimeList } = props;
 
+    const showSnackbar = useBoolean(false);
     const selectedTimeUnitFocus = useStateful(null);
 
     const { barsData, uniqueNames } = useMemo(() => {
@@ -111,9 +125,14 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
         selectedTimeUnitFocus.setValue(dateName);
     }, [selectedTimeUnitFocus]);
 
+    const copyToClipboardAndNotify = useCallback(address => {
+            copyTextToClipboard(address);
+            showSnackbar.setTrue();
+    }, []);
+
     const DisplayAsBarChart = useBarCharts(barsData, uniqueNames, barClickHandler);
 
-    const DisplayAsPieChart = usePieChart(dataObjectForFocus);
+    const DisplayAsPieChart = usePieChart(dataObjectForFocus, copyToClipboardAndNotify);
 
     return (
         <Section style={{ height: '50em'}}>
@@ -125,6 +144,11 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
             <ResponsiveContainer>
                 {dataObjectForFocus ? DisplayAsPieChart : DisplayAsBarChart}
             </ResponsiveContainer>}
+
+            {/* The snackbar for alerts */}
+            <Snackbar open={showSnackbar.value} autoHideDuration={1000}  onClose={showSnackbar.setFalse} >
+                <SuccessSnackbarContent message={`Copied address to clipboard !`} />
+            </Snackbar>
         </Section>
     );
 };
