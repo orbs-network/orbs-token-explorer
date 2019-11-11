@@ -53,8 +53,16 @@ const TINE_UNIT_NAME_KEY = 'timeUnitName';
 const useBarCharts = (barsData, uniqueNames: string[], barClickHandler) => {
     const barsForeachName = useMemo(() => {
         return uniqueNames.map((topHolderName, index) => {
-            return (<Bar key={topHolderName}  onClick={barClickHandler}
-            dataKey={`data.${topHolderName}`} stackId='a' fill={colorFromHolderName(topHolderName)} />);
+            return (
+                <Bar key={topHolderName}
+                     onClick={barClickHandler}
+                     dataKey={`barsData.${topHolderName}`}
+                     stackId='a'
+                     fill={colorFromHolderName(topHolderName)}
+                     unit={'%'}
+                     name={topHolderName}
+                />
+            );
         });
     }, [uniqueNames]);
 
@@ -83,7 +91,7 @@ const usePieChart = (singleTImeUnitObject, copyToClipboard: (text: string) => vo
             return [];
         }
 
-        return Object.entries(singleTImeUnitObject.data).map(([k, v], i) => ({  name: k, value: v }));
+        return Object.entries(singleTImeUnitObject.pieData).map(([k, v], i) => ({  name: k, value: v, displayName: singleTImeUnitObject.addressesToDisplayName[k] }));
     }, [singleTImeUnitObject]);
 
     const onCellClickBuilder = useCallback(address => {
@@ -93,7 +101,7 @@ const usePieChart = (singleTImeUnitObject, copyToClipboard: (text: string) => vo
     }, []);
 
     const pieCells = useMemo(() => {
-        return nameValuePairs.map((entry, i) => (<Cell key={`cell-${i}`} fill={colorFromHolderName(entry.name)} stroke={'black'} onClick={onCellClickBuilder(entry.name)} />));
+        return nameValuePairs.map((entry, i) => (<Cell displayName={entry.displayName} key={`cell-${i}`} fill={colorFromHolderName(entry.name)} stroke={'black'} onClick={onCellClickBuilder(entry.name)} />));
     }, [nameValuePairs]);
 
     if (!nameValuePairs.length) {
@@ -101,10 +109,10 @@ const usePieChart = (singleTImeUnitObject, copyToClipboard: (text: string) => vo
     }
 
     return <PieChart >
-        <Pie  animationBegin={0} animationDuration={1000} data={nameValuePairs} dataKey='value' nameKey='name' cx='50%' cy='50%' outerRadius={'40em'} fill='#8884d8' label >
+        <Pie  animationBegin={0} animationDuration={1000} data={nameValuePairs} dataKey='value' nameKey='name'  outerRadius={'40em'} fill='#8884d8' label labelLine={false} >
             {pieCells}
         </Pie>
-        <Tooltip />
+        <Tooltip formatter={toolTipFormatterForPie}/>
     </PieChart>;
 };
 
@@ -114,11 +122,11 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
     const showSnackbar = useBoolean(false);
     const selectedTimeUnitFocus = useStateful(null);
 
-    const { barsData, uniqueNames } = useMemo(() => {
+    const { barsData, uniqueAddresses } = useMemo(() => {
        if (!topHoldersByTimeList) {
            return {
                barsData: [],
-               uniqueNames: [],
+               uniqueAddresses: [],
            };
        }
 
@@ -144,7 +152,7 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
             showSnackbar.setTrue();
     }, []);
 
-    const DisplayAsBarChart = useBarCharts(barsData, uniqueNames, barClickHandler);
+    const DisplayAsBarChart = useBarCharts(barsData, uniqueAddresses, barClickHandler);
 
     const DisplayAsPieChart = usePieChart(dataObjectForFocus, copyToClipboardAndNotify);
 
@@ -159,7 +167,6 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
                 </SectionHeaderTitle>
                 {displaysPieChart && <SectionHeaderActionButton onClick={() => selectedTimeUnitFocus.setValue(null)} > Back to graph </SectionHeaderActionButton>}
             </SectionHeader>
-
 
             {/* For loading */}
             <ClipLoader loading={isLoading} />
@@ -179,49 +186,70 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
 };
 
 function toolTipFormatter(value: number, name: string,
+                           entry: TooltipPayload, index: number) {
+    return [`${value.toFixed(3)} `, entry.payload.addressesToDisplayName[name]];
+}
+
+function toolTipFormatterForPie(value: number, name: string,
                           entry: TooltipPayload, index: number) {
-    return value.toFixed(3);
+    return [value.toFixed(4), entry.payload.displayName];
 }
 
 function colorFromHolderName(name: string): string {
     const rand = genRandom.create(name);
     // DEV_NOTE : starting from 200 to prevent very light (unreadable) colors
     // @ts-ignore
-    const shade: 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900  = (rand(7) + 2 ) * 100;
+    const shade: 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900  = (rand(4) + 5 ) * 100;
     const color = toMaterialStyle(name, shade).backgroundColor;
 
     return color;
 }
 
-function toBarData(topHoldersByTimes: ITopHoldersAtTime[]): { barsData: object[], uniqueNames: string[]} {
+function toBarData(topHoldersByTimes: ITopHoldersAtTime[]): { barsData: object[], uniqueAddresses: string[]} {
     const barsData = topHoldersByTimes.map(topHoldersByTime => {
         const totalTokensPerTimeFrame = topHoldersByTime.totalTokens;
 
         const timeUnitName = moment.utc(topHoldersByTime.timestamp * 1000).format('MMM/YY');
 
         const barData = {
+            // This is the value that will be display as the 'X' axis value
             timeUnitName,
-            timestamp: topHoldersByTime.timestamp,
-            data: {
 
-            }
+            // Meta data about the time
+            timestamp: topHoldersByTime.timestamp,
+
+            // here we will put all of the bars data for
+            barsData: {
+
+            },
+
+            // here we will put all of the pie data for
+            pieData: {
+
+            },
+
+            addressesToDisplayName : {
+
+            },
         };
 
         topHoldersByTime.topHolders.forEach(topHolder => {
             const percentageOfStake = (topHolder.tokens / totalTokensPerTimeFrame) * 100;
 
-            barData.data[topHolder.displayName] = percentageOfStake.toFixed(4);
-            barData.data[topHolder.displayName] = percentageOfStake;
+            barData.barsData[topHolder.address] = percentageOfStake;
+            barData.pieData[topHolder.address] = percentageOfStake;
+
+            barData.addressesToDisplayName[topHolder.address] = topHolder.displayName;
         });
 
         return barData;
     });
 
-    const allEntities = (topHoldersByTimes.map(topHoldersByTime => topHoldersByTime.topHolders.map(topHolder => topHolder.displayName))).flat(2);
-    const uniqEntities = new Set<string>(allEntities);
+    const allEntities = (topHoldersByTimes.map(topHoldersByTime => topHoldersByTime.topHolders.map(topHolder => topHolder.address))).flat(2);
+    const uniqEntitiesAddresses = new Set<string>(allEntities);
 
     return {
         barsData,
-        uniqueNames: Array.from(uniqEntities.values()),
+        uniqueAddresses: Array.from(uniqEntitiesAddresses.values()),
     };
 }
