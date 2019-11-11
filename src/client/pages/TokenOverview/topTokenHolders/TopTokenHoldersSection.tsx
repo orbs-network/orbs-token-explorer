@@ -9,7 +9,7 @@ import {
     TooltipPayload, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import styled from 'styled-components';
-import {colors, Icon, Snackbar, SnackbarContent, Typography} from '@material-ui/core';
+import {Button, colors, Icon, Snackbar, SnackbarContent, Typography} from '@material-ui/core';
 import { ClipLoader } from 'react-spinners';
 import {ITopHoldersAtTime} from '../../../../shared/serverResponses/bi/serverBiResponses';
 import moment from 'moment';
@@ -30,8 +30,18 @@ const Section = styled('div')({
     border: '1px solid black'
 });
 
-const SectionHeader = styled(Typography)(({theme}) => ({
+const SectionHeader = styled('div')(({theme}) => ({
     color: theme.style.colors.lightText,
+    flexDirection: 'row',
+    display: 'flex',
+    flex: 1,
+    justifyContent: 'space-between'
+}));
+
+const SectionHeaderTitle = styled(Typography)(({theme}) => ({}));
+
+const SectionHeaderActionButton = styled(Button)(({theme}) => ({
+    color: 'inherit',
 }));
 
 const SuccessSnackbarContent = styled(SnackbarContent)(({theme}) => ({
@@ -82,13 +92,17 @@ const usePieChart = (singleTImeUnitObject, copyToClipboard: (text: string) => vo
         };
     }, []);
 
+    const pieCells = useMemo(() => {
+        return nameValuePairs.map((entry, i) => (<Cell key={`cell-${i}`} fill={colorFromHolderName(entry.name)} stroke={'black'} onClick={onCellClickBuilder(entry.name)} />));
+    }, [nameValuePairs]);
+
     if (!nameValuePairs.length) {
         return <div> No holders </div>;
     }
 
     return <PieChart >
         <Pie  animationBegin={0} animationDuration={1000} data={nameValuePairs} dataKey='value' nameKey='name' cx='50%' cy='50%' outerRadius={'40em'} fill='#8884d8' label >
-            {nameValuePairs.map((entry, i) => (<Cell key={`cell-${i}`} fill={colorFromHolderName(entry.name)} stroke={'black'} onClick={onCellClickBuilder(entry.name)} />))}
+            {pieCells}
         </Pie>
         <Tooltip />
     </PieChart>;
@@ -134,16 +148,27 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
 
     const DisplayAsPieChart = usePieChart(dataObjectForFocus, copyToClipboardAndNotify);
 
+    const displaysPieChart = !!selectedTimeUnitFocus.value;
+
     return (
         <Section style={{ height: '50em'}}>
-            <SectionHeader variant={'h6'} >Top token holders as percentage of circulation</SectionHeader>
+            {/* Header */}
+            <SectionHeader>
+                <SectionHeaderTitle variant={'h6'} >
+                    Top token holders as percentage of circulation
+                </SectionHeaderTitle>
+                {displaysPieChart && <SectionHeaderActionButton onClick={() => selectedTimeUnitFocus.setValue(null)} > Back to graph </SectionHeaderActionButton>}
+            </SectionHeader>
 
+
+            {/* For loading */}
             <ClipLoader loading={isLoading} />
 
-            {!isLoading &&
-            <ResponsiveContainer>
-                {dataObjectForFocus ? DisplayAsPieChart : DisplayAsBarChart}
-            </ResponsiveContainer>}
+            {!isLoading && <>
+                <ResponsiveContainer>
+                    {displaysPieChart ? DisplayAsPieChart : DisplayAsBarChart}
+                </ResponsiveContainer>
+            </>}
 
             {/* The snackbar for alerts */}
             <Snackbar open={showSnackbar.value} autoHideDuration={1000}  onClose={showSnackbar.setFalse} >
