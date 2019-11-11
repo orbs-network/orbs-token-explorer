@@ -1,23 +1,21 @@
-import React, { useMemo } from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {
     Bar,
     BarChart,
-    CartesianGrid,
-    Legend,
     Tooltip,
     XAxis,
     YAxis,
     ResponsiveContainer,
-    TooltipPayload, LabelList
+    TooltipPayload, PieChart, Pie, Cell
 } from 'recharts';
 import styled from 'styled-components';
 import {colors, Typography} from '@material-ui/core';
 import { ClipLoader } from 'react-spinners';
 import {ITopHoldersAtTime} from '../../../../shared/serverResponses/bi/serverBiResponses';
 import moment from 'moment';
-import Color from 'color';
 import toMaterialStyle from 'material-color-hash';
 import genRandom from 'random-seed';
+import { useStateful } from 'react-hanger';
 
 interface IProps {
     isLoading: boolean;
@@ -33,8 +31,60 @@ const SectionHeader = styled(Typography)(({theme}) => ({
     color: theme.style.colors.lightText,
 }));
 
+const TINE_UNIT_NAME_KEY = 'timeUnitName';
+
+const useBarCharts = (barsData, uniqueNames: string[], barClickHandler) => {
+    const barsForeachName = useMemo(() => {
+        return uniqueNames.map((topHolderName, index) => {
+            return (<Bar key={topHolderName}  onClick={barClickHandler}
+            dataKey={`data.${topHolderName}`} stackId='a' fill={colorFromHolderName(topHolderName)} />);
+        });
+    }, [uniqueNames]);
+
+    const DisplayAsBarChart = useMemo(() => {
+        return <BarChart
+            data={barsData}
+            margin={{
+                top: 20, right: 30, left: 50, bottom: 50,
+            }}
+        >
+            <XAxis dataKey={TINE_UNIT_NAME_KEY} />
+            <YAxis domain={[0, 100]} />
+            <Tooltip formatter={toolTipFormatter} />
+
+            {barsForeachName}
+        </BarChart>;
+    }, [barsData, barsForeachName, ]);
+
+    return DisplayAsBarChart;
+};
+
+const usePieChart = singleTImeUnitObject => {
+    // Convert the 'data' to 'name'-'value' objects to fit the pie chart.
+    const nameValuePairs = useMemo(() => {
+        if (!singleTImeUnitObject) {
+            return [];
+        }
+
+        return Object.entries(singleTImeUnitObject.data).map(([k, v], i) => ({  name: k, value: v }));
+    }, [singleTImeUnitObject]);
+
+    if (!nameValuePairs.length) {
+        return <div> No holders </div>;
+    }
+
+    return <PieChart >
+        <Pie data={nameValuePairs} dataKey='value' nameKey='name' cx='50%' cy='50%' outerRadius={'40em'} fill='#8884d8' >
+            {nameValuePairs.map((entry, i) => (<Cell key={`cell-${i}`} fill={colorFromHolderName(entry.name)} />))}
+        </Pie>
+        <div>No</div>
+    </PieChart>;
+};
+
 export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
     const { isLoading, topHoldersByTimeList } = props;
+
+    const selectedTimeUnitFocus = useStateful(null);
 
     const { barsData, uniqueNames } = useMemo(() => {
        if (!topHoldersByTimeList) {
@@ -47,30 +97,33 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
        return toBarData(topHoldersByTimeList);
     }, [topHoldersByTimeList]);
 
+    const dataObjectForFocus = useMemo(() => {
+        if (!selectedTimeUnitFocus.value) {
+            return null;
+        }
+
+        return barsData.filter(dataObject => dataObject[TINE_UNIT_NAME_KEY] === selectedTimeUnitFocus.value)[0];
+    }, [barsData, selectedTimeUnitFocus.value]);
+
+    const barClickHandler = useCallback((xAxisGroup: {[TINE_UNIT_NAME_KEY]: string}) => {
+        const dateName = xAxisGroup[TINE_UNIT_NAME_KEY];
+
+        selectedTimeUnitFocus.setValue(dateName);
+    }, [selectedTimeUnitFocus]);
+
+    const DisplayAsBarChart = useBarCharts(barsData, uniqueNames, barClickHandler);
+
+    const DisplayAsPieChart = usePieChart(dataObjectForFocus);
+
     return (
         <Section style={{ height: '50em'}}>
             <SectionHeader variant={'h6'} >Top token holders as percentage of circulation</SectionHeader>
 
             <ClipLoader loading={isLoading} />
 
-            {!isLoading && <ResponsiveContainer>
-                <BarChart
-                    data={barsData}
-                    margin={{
-                        top: 20, right: 30, left: 50, bottom: 50,
-                    }}
-                    // stackOffset={'expand'}
-                >
-                    {/*<CartesianGrid strokeDasharray='3 3' />*/}
-                    <XAxis dataKey='timeUnitName' />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip formatter={toolTipFormatter} />
-                    {/*<Legend />*/}
-
-                    {uniqueNames.map((topHolderName, index) => {
-                        return (<Bar key={topHolderName} dataKey={topHolderName} stackId='a' fill={colorFromHolderName(topHolderName)} />);
-                    })}
-                </BarChart>
+            {!isLoading &&
+            <ResponsiveContainer>
+                {dataObjectForFocus ? DisplayAsPieChart : DisplayAsBarChart}
             </ResponsiveContainer>}
         </Section>
     );
@@ -99,13 +152,17 @@ function toBarData(topHoldersByTimes: ITopHoldersAtTime[]): { barsData: object[]
 
         const barData = {
             timeUnitName,
+            timestamp: topHoldersByTime.timestamp,
+            data: {
+
+            }
         };
 
         topHoldersByTime.topHolders.forEach(topHolder => {
             const percentageOfStake = (topHolder.tokens / totalTokensPerTimeFrame) * 100;
 
-            barData[topHolder.displayName] = percentageOfStake.toFixed(4);
-            barData[topHolder.displayName] = percentageOfStake;
+            barData.data[topHolder.displayName] = percentageOfStake.toFixed(4);
+            barData.data[topHolder.displayName] = percentageOfStake;
         });
 
         return barData;
