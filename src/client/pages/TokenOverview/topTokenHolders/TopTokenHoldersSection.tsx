@@ -11,7 +11,7 @@ import {
 import styled from 'styled-components';
 import {Button, colors, Icon, Snackbar, SnackbarContent, Typography} from '@material-ui/core';
 import { ClipLoader } from 'react-spinners';
-import {ITopHoldersAtTime} from '../../../../shared/serverResponses/bi/serverBiResponses';
+import {IHolderStake, ITopHoldersAtTime} from '../../../../shared/serverResponses/bi/serverBiResponses';
 import moment from 'moment';
 import toMaterialStyle from 'material-color-hash';
 import genRandom from 'random-seed';
@@ -50,6 +50,14 @@ const SuccessSnackbarContent = styled(SnackbarContent)(({theme}) => ({
 
 const TINE_UNIT_NAME_KEY = 'timeUnitName';
 
+interface IHolderSummaryForGraph {
+    address: string;
+    displayName: string;
+    percentageOfStake: number;
+    tokens: number;
+    roleDescription: string;
+}
+
 const useBarCharts = (barsData, uniqueNames: string[], barClickHandler) => {
     const barsForeachName = useMemo(() => {
         return uniqueNames.map((topHolderName, index) => {
@@ -84,32 +92,45 @@ const useBarCharts = (barsData, uniqueNames: string[], barClickHandler) => {
     return DisplayAsBarChart;
 };
 
-const usePieChart = (singleTImeUnitObject, copyToClipboard: (text: string) => void) => {
-    // Convert the 'data' to 'name'-'value' objects to fit the pie chart.
-    const nameValuePairs = useMemo(() => {
-        if (!singleTImeUnitObject) {
-            return [];
-        }
-
-        return Object.entries(singleTImeUnitObject.pieData).map(([k, v], i) => ({  name: k, value: v, displayName: singleTImeUnitObject.addressesToDisplayName[k] }));
-    }, [singleTImeUnitObject]);
-
+const usePieChart = (holdersSummaries: IHolderSummaryForGraph[], copyToClipboard: (text: string) => void) => {
     const onCellClickBuilder = useCallback(address => {
         return () => {
             copyToClipboard(address);
         };
     }, []);
 
-    const pieCells = useMemo(() => {
-        return nameValuePairs.map((entry, i) => (<Cell displayName={entry.displayName} key={`cell-${i}`} fill={colorFromHolderName(entry.name)} stroke={'black'} onClick={onCellClickBuilder(entry.name)} />));
-    }, [nameValuePairs]);
+    // Convert the 'data' to 'name'-'value' objects to fit the pie chart APi.
+    const nameValuePairs = useMemo(() => {
+        if (!holdersSummaries.length) {
+            return [];
+        }
 
-    if (!nameValuePairs.length) {
+        return holdersSummaries.map(holderSummary => ({  name: holderSummary.address, value: parseFloat(holderSummary.percentageOfStake.toFixed(4)) }));
+    }, [holdersSummaries]);
+
+    // Build the custom cell
+    const pieCells = useMemo(() => {
+        return holdersSummaries.map(holderSummary => (<Cell extraData={{ displayName: holderSummary.displayName, roleDescription: holderSummary.roleDescription }} key={`cell-${holderSummary.address}`} fill={colorFromHolderName(holderSummary.address)} stroke={'black'} onClick={onCellClickBuilder(holderSummary.address)} />));
+    }, [holdersSummaries]);
+
+    const endAngel = useMemo(() => {
+        const totalPercentage = holdersSummaries.reduce((total, holderSummary) => total + holderSummary.percentageOfStake, 0);
+        const percentageInDegrees = (totalPercentage / 100) * 360;
+
+        return percentageInDegrees;
+    }, [holdersSummaries]);
+
+    if (!holdersSummaries.length) {
         return <div> No holders </div>;
     }
 
     return <PieChart >
-        <Pie  animationBegin={0} animationDuration={1000} data={nameValuePairs} dataKey='value' nameKey='name'  outerRadius={'40em'} fill='#8884d8' label labelLine={false} >
+        <Pie startAngle={0} endAngle={endAngel}
+             animationBegin={0} animationDuration={1000}
+             data={nameValuePairs} dataKey='value' nameKey='name'
+             outerRadius={'40em'} fill='#8884d8'
+             label labelLine={false}
+        >
             {pieCells}
         </Pie>
         <Tooltip formatter={toolTipFormatterForPie}/>
@@ -150,11 +171,11 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
     const copyToClipboardAndNotify = useCallback(address => {
             copyTextToClipboard(address);
             showSnackbar.setTrue();
-    }, []);
+    }, [showSnackbar]);
 
     const DisplayAsBarChart = useBarCharts(barsData, uniqueAddresses, barClickHandler);
 
-    const DisplayAsPieChart = usePieChart(dataObjectForFocus, copyToClipboardAndNotify);
+    const DisplayAsPieChart = usePieChart(dataObjectForFocus ? dataObjectForFocus.holdersSummaries : [], copyToClipboardAndNotify);
 
     const displaysPieChart = !!selectedTimeUnitFocus.value;
 
@@ -185,19 +206,28 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
     );
 };
 
-function toolTipFormatter(value: number, name: string,
-                           entry: TooltipPayload, index: number) {
+/**
+ * Formates the tooltip for the bar chart.
+ */
+function toolTipFormatter(value: number, name: string, entry: TooltipPayload, index: number) {
     return [`${value.toFixed(3)} `, entry.payload.addressesToDisplayName[name]];
 }
 
-function toolTipFormatterForPie(value: number, name: string,
-                          entry: TooltipPayload, index: number) {
-    return [value.toFixed(4), entry.payload.displayName];
+/**
+ * Formates the tooltip for the pie chart.
+ */
+function toolTipFormatterForPie(value: number, name: string, entry: TooltipPayload, index: number) {
+    const { displayName, roleDescription } = entry.payload.extraData;
+    return [value.toFixed(4), `${displayName} (${roleDescription})`];
 }
 
+/**
+ * Returns a hex color string generated from the give string.
+ * Will always return the same color for the same string.
+ */
 function colorFromHolderName(name: string): string {
     const rand = genRandom.create(name);
-    // DEV_NOTE : starting from 200 to prevent very light (unreadable) colors
+    // DEV_NOTE : starting from 500 to prevent very light (unreadable) colors
     // @ts-ignore
     const shade: 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900  = (rand(4) + 5 ) * 100;
     const color = toMaterialStyle(name, shade).backgroundColor;
@@ -223,21 +253,26 @@ function toBarData(topHoldersByTimes: ITopHoldersAtTime[]): { barsData: object[]
 
             },
 
-            // here we will put all of the pie data for
-            pieData: {
-
-            },
-
             addressesToDisplayName : {
 
             },
+
+            // Maps addresses to their relevant data
+            holdersSummaries: []
         };
 
         topHoldersByTime.topHolders.forEach(topHolder => {
             const percentageOfStake = (topHolder.tokens / totalTokensPerTimeFrame) * 100;
 
             barData.barsData[topHolder.address] = percentageOfStake;
-            barData.pieData[topHolder.address] = percentageOfStake;
+
+            barData.holdersSummaries.push({
+                address: topHolder.address,
+                tokens: topHolder.tokens,
+                percentageOfStake,
+                displayName: topHolder.displayName,
+                roleDescription: generateHolderRoleDescription(topHolder),
+            });
 
             barData.addressesToDisplayName[topHolder.address] = topHolder.displayName;
         });
@@ -252,4 +287,21 @@ function toBarData(topHoldersByTimes: ITopHoldersAtTime[]): { barsData: object[]
         barsData,
         uniqueAddresses: Array.from(uniqEntitiesAddresses.values()),
     };
+}
+
+/**
+ * Generates the role description for the give holder.
+ */
+function generateHolderRoleDescription(holder: IHolderStake): string {
+    let description = 'Unknown';
+
+    if (holder.isExchange) {
+        description = 'Exchange';
+    } else if (holder.isGuardian) {
+        description = 'Guardian';
+    } else if (holder.isOrbsAddress) {
+        description = 'Orbs LTD';
+    }
+
+    return description;
 }
