@@ -6,19 +6,18 @@ import {
     XAxis,
     YAxis,
     ResponsiveContainer,
-    TooltipPayload, PieChart, Pie, Cell, Legend
+    TooltipPayload, PieChart, Pie, Cell
 } from 'recharts';
 import styled from 'styled-components';
-import {Button, colors, Icon, Snackbar, SnackbarContent, Typography} from '@material-ui/core';
+import Green from '@material-ui/core/colors/green';
+import {Button, Snackbar, SnackbarContent, Typography} from '@material-ui/core';
 import { ClipLoader } from 'react-spinners';
-import {IHolderStake, ITopHoldersAtTime} from '../../../../shared/serverResponses/bi/serverBiResponses';
 import moment from 'moment';
 import toMaterialStyle from 'material-color-hash';
 import genRandom from 'random-seed';
 import { useStateful, useBoolean } from 'react-hanger';
 import copyTextToClipboard from 'copy-text-to-clipboard';
-import Green from '@material-ui/core/colors/green';
-import AssignmentTwoToneIcon from '@material-ui/icons/AssignmentTwoTone';
+import {IHolderStake, ITopHoldersAtTime} from '../../../../shared/serverResponses/bi/serverBiResponses';
 
 interface IProps {
     isLoading: boolean;
@@ -58,36 +57,46 @@ interface IHolderSummaryForGraph {
     roleDescription: string;
 }
 
-const useBarCharts = (barsData, uniqueNames: string[], barClickHandler) => {
+interface ISingleTimeUnitGraphData {
+    timeUnitName: string;
+
+    addressesToPercentage: {[address: string]: number};
+
+    addressesToDisplayName: {[address: string]: string};
+
+    holdersSummaries: IHolderSummaryForGraph[];
+}
+
+const useBarCharts = (graphsData: ISingleTimeUnitGraphData[], uniqueAddresses: string[], barClickHandler: (selectedXAxisValue: {[TINE_UNIT_NAME_KEY]: string}) => void) => {
     const barsForeachName = useMemo(() => {
-        return uniqueNames.map((topHolderName, index) => {
+        return uniqueAddresses.map((address, index) => {
             return (
-                <Bar key={topHolderName}
+                <Bar key={address}
                      onClick={barClickHandler}
-                     dataKey={`barsData.${topHolderName}`}
+                     dataKey={`addressesToPercentage.${address}`}
                      stackId='a'
-                     fill={colorFromHolderName(topHolderName)}
+                     fill={constantColorFromString(address)}
                      unit={'%'}
-                     name={topHolderName}
+                     name={address}
                 />
             );
         });
-    }, [uniqueNames]);
+    }, [uniqueAddresses]);
 
     const DisplayAsBarChart = useMemo(() => {
         return <BarChart
-            data={barsData}
+            data={graphsData}
             margin={{
                 top: 20, right: 30, left: 50, bottom: 50,
             }}
         >
             <XAxis dataKey={TINE_UNIT_NAME_KEY} />
             <YAxis domain={[0, 100]} />
-            <Tooltip formatter={toolTipFormatter} />
+            <Tooltip formatter={toolTipFormatterForBars} />
 
             {barsForeachName}
         </BarChart>;
-    }, [barsData, barsForeachName, ]);
+    }, [graphsData, barsForeachName, ]);
 
     return DisplayAsBarChart;
 };
@@ -105,12 +114,13 @@ const usePieChart = (holdersSummaries: IHolderSummaryForGraph[], copyToClipboard
             return [];
         }
 
-        return holdersSummaries.map(holderSummary => ({  name: holderSummary.address, value: parseFloat(holderSummary.percentageOfStake.toFixed(4)) }));
+        return holdersSummaries.map(holderSummary => ({  name: holderSummary.address, value: parseFloat(holderSummary.percentageOfStake.toFixed(3)) }));
     }, [holdersSummaries]);
 
     // Build the custom cell
     const pieCells = useMemo(() => {
-        return holdersSummaries.map(holderSummary => (<Cell extraData={{ displayName: holderSummary.displayName, roleDescription: holderSummary.roleDescription }} key={`cell-${holderSummary.address}`} fill={colorFromHolderName(holderSummary.address)} stroke={'black'} onClick={onCellClickBuilder(holderSummary.address)} />));
+        // @ts-ignore (we add 'extra data')
+        return holdersSummaries.map(holderSummary => (<Cell extraData={{ displayName: holderSummary.displayName, roleDescription: holderSummary.roleDescription }} key={`cell-${holderSummary.address}`} fill={constantColorFromString(holderSummary.address)} stroke={'black'} onClick={onCellClickBuilder(holderSummary.address)} />));
     }, [holdersSummaries]);
 
     const endAngel = useMemo(() => {
@@ -143,24 +153,24 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
     const showSnackbar = useBoolean(false);
     const selectedTimeUnitFocus = useStateful(null);
 
-    const { barsData, uniqueAddresses } = useMemo(() => {
+    const { graphsData, uniqueAddresses } = useMemo<ReturnType<typeof toGraphsData>>(() => {
        if (!topHoldersByTimeList) {
            return {
-               barsData: [],
+               graphsData: [],
                uniqueAddresses: [],
            };
        }
 
-       return toBarData(topHoldersByTimeList);
+       return toGraphsData(topHoldersByTimeList);
     }, [topHoldersByTimeList]);
 
-    const dataObjectForFocus = useMemo(() => {
+    const dataObjectForFocus = useMemo<ISingleTimeUnitGraphData>(() => {
         if (!selectedTimeUnitFocus.value) {
             return null;
         }
 
-        return barsData.filter(dataObject => dataObject[TINE_UNIT_NAME_KEY] === selectedTimeUnitFocus.value)[0];
-    }, [barsData, selectedTimeUnitFocus.value]);
+        return graphsData.filter(dataObject => dataObject[TINE_UNIT_NAME_KEY] === selectedTimeUnitFocus.value)[0];
+    }, [graphsData, selectedTimeUnitFocus.value]);
 
     const barClickHandler = useCallback((xAxisGroup: {[TINE_UNIT_NAME_KEY]: string}) => {
         const dateName = xAxisGroup[TINE_UNIT_NAME_KEY];
@@ -173,7 +183,7 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
             showSnackbar.setTrue();
     }, [showSnackbar]);
 
-    const DisplayAsBarChart = useBarCharts(barsData, uniqueAddresses, barClickHandler);
+    const DisplayAsBarChart = useBarCharts(graphsData, uniqueAddresses, barClickHandler);
 
     const DisplayAsPieChart = usePieChart(dataObjectForFocus ? dataObjectForFocus.holdersSummaries : [], copyToClipboardAndNotify);
 
@@ -209,7 +219,7 @@ export const TopTokenHoldersSection: React.FC<IProps> = (props: IProps) => {
 /**
  * Formates the tooltip for the bar chart.
  */
-function toolTipFormatter(value: number, name: string, entry: TooltipPayload, index: number) {
+function toolTipFormatterForBars(value: number, name: string, entry: TooltipPayload, index: number) {
     return [`${value.toFixed(3)} `, entry.payload.addressesToDisplayName[name]];
 }
 
@@ -218,14 +228,14 @@ function toolTipFormatter(value: number, name: string, entry: TooltipPayload, in
  */
 function toolTipFormatterForPie(value: number, name: string, entry: TooltipPayload, index: number) {
     const { displayName, roleDescription } = entry.payload.extraData;
-    return [value.toFixed(4), `${displayName} (${roleDescription})`];
+    return [value.toFixed(3), `${displayName} (${roleDescription})`];
 }
 
 /**
  * Returns a hex color string generated from the give string.
  * Will always return the same color for the same string.
  */
-function colorFromHolderName(name: string): string {
+function constantColorFromString(name: string): string {
     const rand = genRandom.create(name);
     // DEV_NOTE : starting from 500 to prevent very light (unreadable) colors
     // @ts-ignore
@@ -235,24 +245,25 @@ function colorFromHolderName(name: string): string {
     return color;
 }
 
-function toBarData(topHoldersByTimes: ITopHoldersAtTime[]): { barsData: object[], uniqueAddresses: string[]} {
-    const barsData = topHoldersByTimes.map(topHoldersByTime => {
+/**
+ * Converts the data from its server form to a format more useful for our graphs.
+ */
+function toGraphsData(topHoldersByTimes: ITopHoldersAtTime[]): { graphsData: ISingleTimeUnitGraphData[], uniqueAddresses: string[]} {
+    const graphsData: ISingleTimeUnitGraphData[] = topHoldersByTimes.map(topHoldersByTime => {
         const totalTokensPerTimeFrame = topHoldersByTime.totalTokens;
 
         const timeUnitName = moment.utc(topHoldersByTime.timestamp * 1000).format('MMM/YY');
 
-        const barData = {
+        const dataForGraphs = {
             // This is the value that will be display as the 'X' axis value
             timeUnitName,
 
-            // Meta data about the time
-            timestamp: topHoldersByTime.timestamp,
-
             // here we will put all of the bars data for
-            barsData: {
+            addressesToPercentage: {
 
             },
 
+            //
             addressesToDisplayName : {
 
             },
@@ -264,9 +275,9 @@ function toBarData(topHoldersByTimes: ITopHoldersAtTime[]): { barsData: object[]
         topHoldersByTime.topHolders.forEach(topHolder => {
             const percentageOfStake = (topHolder.tokens / totalTokensPerTimeFrame) * 100;
 
-            barData.barsData[topHolder.address] = percentageOfStake;
+            dataForGraphs.addressesToPercentage[topHolder.address] = percentageOfStake;
 
-            barData.holdersSummaries.push({
+            dataForGraphs.holdersSummaries.push({
                 address: topHolder.address,
                 tokens: topHolder.tokens,
                 percentageOfStake,
@@ -274,17 +285,18 @@ function toBarData(topHoldersByTimes: ITopHoldersAtTime[]): { barsData: object[]
                 roleDescription: generateHolderRoleDescription(topHolder),
             });
 
-            barData.addressesToDisplayName[topHolder.address] = topHolder.displayName;
+            dataForGraphs.addressesToDisplayName[topHolder.address] = topHolder.displayName;
         });
 
-        return barData;
+        return dataForGraphs;
     });
 
+    // Extracts all of the addresses into a unique set
     const allEntities = (topHoldersByTimes.map(topHoldersByTime => topHoldersByTime.topHolders.map(topHolder => topHolder.address))).flat(2);
     const uniqEntitiesAddresses = new Set<string>(allEntities);
 
     return {
-        barsData,
+        graphsData,
         uniqueAddresses: Array.from(uniqEntitiesAddresses.values()),
     };
 }
