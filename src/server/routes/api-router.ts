@@ -11,12 +11,9 @@ import { Router } from 'express';
 import { IDB } from '../db/IDB';
 import { ISomeData } from '../../shared/ISomeData';
 import {IAPITopHoldersResponse, ITopHoldersAtTime} from '../../shared/serverResponses/bi/serverBiResponses';
-import {getTopHolders} from './tokenDistributionHandler';
+import NodeCache from 'node-cache';
 
-import { devRes } from '../db/topTokenHolders';
-
-// let decCache: ITopHoldersAtTime[] = devRes;
-let decCache: ITopHoldersAtTime[] = null;
+const apiCache = new NodeCache();
 
 export function apiRouter(db: IDB) {
   const router = Router();
@@ -37,13 +34,15 @@ export function apiRouter(db: IDB) {
   });
 
   router.get<{name: string}>('/api/token-dist/top-holders', async (req, res) => {
-    // const topHoldersAtTimePoints = await db.getTopTokenHolders();
+    const topHoldersCacheKey = 'topHolders';
 
-    if (!decCache) {
-      decCache = await db.getTopTokenHolders();
+    if (!apiCache.has(topHoldersCacheKey)) {
+      const topHolders = await db.getTopTokenHolders();
+
+      apiCache.set(topHoldersCacheKey, topHolders, 60 * 60 * 24);
     }
 
-    const topHoldersAtTimePoints = decCache;
+    const topHoldersAtTimePoints: ITopHoldersAtTime[] = apiCache.get(topHoldersCacheKey);
 
     // const topHoldersAtTimePoints = decCache;
 
