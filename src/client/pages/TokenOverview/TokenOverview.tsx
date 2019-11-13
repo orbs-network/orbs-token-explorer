@@ -50,6 +50,12 @@ export const TokenOverview = () => {
     const minPercentage = useNumber(1);
     const [topHoldersByTimesFromServer, setTopHoldersByTimesFromServer] = useState<ITopHoldersAtTime[]>(null);
 
+    // Reacts to the percentage slider change
+    const onSliderChange = useCallback((_, newValue: number) => {
+        minPercentage.setValue(newValue);
+    }, [minPercentage]);
+
+    // Builds the filtering function
     const holderFiltering = useCallback((holder: IHolderStake, totalOrbsInCirculation: number) => {
         const minTokens = (minPercentage.value > 0) ? (totalOrbsInCirculation / 100) * minPercentage.value : 0;
 
@@ -64,6 +70,7 @@ export const TokenOverview = () => {
         );
     }, [showOrbsLtd.value, minPercentage.value, maximumTokens.value, showGuardians.value, showUnknowns.value, showExchanges.value]);
 
+    // Extracts only the values that should be displayed
     const topHoldersByTimesForDisplay: ITopHoldersAtTime[] = useMemo(() => {
         if (!topHoldersByTimesFromServer) {
             return [];
@@ -135,7 +142,7 @@ export const TokenOverview = () => {
                         defaultValue={minPercentage.value}
                         value={minPercentage.value}
 
-                        onChange={(_, value) => minPercentage.setValue(value)}
+                        onChange={onSliderChange}
 
                         valueLabelDisplay={'auto'}
 
@@ -143,7 +150,7 @@ export const TokenOverview = () => {
                         min={0.5}
                         max={5}
                         step={0.1}
-                        marks={[{ label: `${0.5}%`, value: 0.5 }, {  label: 5, value: 5}]}
+                        marks={labelsForSlider}
                     />}
                                       label={'Min % of circulation'}
                                       labelPlacement={'top'}
@@ -155,3 +162,9 @@ export const TokenOverview = () => {
         </PagePadder>
     );
 };
+
+const labelsForSlider: Array<{label: string, value: number}> = [
+  { label: `${0.5}%`, value: 0.5 },
+  { label: `${2.5}%`, value: 2.5 },
+    {  label: '5%', value: 5}
+];
