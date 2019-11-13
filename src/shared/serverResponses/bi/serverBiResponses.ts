@@ -1,4 +1,4 @@
-export interface IHolderStake {
+export interface IHolderStakeSnapshot {
     address: string;
     displayName: string;
     tokens: number;
@@ -10,7 +10,7 @@ export interface IHolderStake {
 export interface ITopHoldersAtTime {
     timestamp: number;
     totalTokens: number;
-    topHolders: IHolderStake[];
+    topHolders: IHolderStakeSnapshot[];
 }
 
 export interface IAPITopHoldersResponse {

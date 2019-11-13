@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import {TopTokenHoldersSection} from './topTokenHolders/TopTokenHoldersSection';
 import {useBoolean, useNumber} from 'react-hanger';
 import {OrbsBiService} from '../../services/OrbsBiService';
-import {IHolderStake, ITopHoldersAtTime} from '../../../shared/serverResponses/bi/serverBiResponses';
+import {IHolderStakeSnapshot, ITopHoldersAtTime} from '../../../shared/serverResponses/bi/serverBiResponses';
 
 const PagePadder = styled('div')(({theme}) => ({
     paddingLeft: theme.spacing(2),
@@ -56,7 +56,7 @@ export const TokenOverview = () => {
     }, [minPercentage]);
 
     // Builds the filtering function
-    const holderFiltering = useCallback((holder: IHolderStake, totalOrbsInCirculation: number) => {
+    const holderFiltering = useCallback((holder: IHolderStakeSnapshot, totalOrbsInCirculation: number) => {
         const minTokens = (minPercentage.value > 0) ? (totalOrbsInCirculation / 100) * minPercentage.value : 0;
 
         return (

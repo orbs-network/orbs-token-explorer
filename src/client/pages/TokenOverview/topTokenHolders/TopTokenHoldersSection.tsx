@@ -17,7 +17,7 @@ import toMaterialStyle from 'material-color-hash';
 import genRandom from 'random-seed';
 import { useStateful, useBoolean } from 'react-hanger';
 import copyTextToClipboard from 'copy-text-to-clipboard';
-import {IHolderStake, ITopHoldersAtTime} from '../../../../shared/serverResponses/bi/serverBiResponses';
+import {IHolderStakeSnapshot, ITopHoldersAtTime} from '../../../../shared/serverResponses/bi/serverBiResponses';
 
 interface IProps {
     isLoading: boolean;
@@ -304,7 +304,7 @@ function toGraphsData(topHoldersByTimes: ITopHoldersAtTime[]): { graphsData: ISi
 /**
  * Generates the role description for the give holder.
  */
-function generateHolderRoleDescription(holder: IHolderStake): string {
+function generateHolderRoleDescription(holder: IHolderStakeSnapshot): string {
     let description = 'Unknown';
 
     if (holder.isExchange) {
