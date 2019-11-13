@@ -71,14 +71,21 @@ export class MySqlDB implements IDB {
   }
 
   public async getTopTokenHolders() {
+    // Used for optimization
     const minHolding = 1_000_000;
-    const groupByMonths = '%m/%Y';
-    const startTimeStamp = Moment.utc().subtract(1, 'year').startOf('month').unix();
+
+    // Used to determine the time range and units returned by the query.
+    const timeUnitFormat = '%m/%Y';
+    const timeUnitName = 'month';
+
+    // Calculates the timestamp to start searching from
+    const startTimeStamp = Moment.utc().subtract(1, 'year').startOf(timeUnitName).unix();
 
     // find all relevant blocks data
-    const relevantBlockData = await this.fetchLatestBlocksDataForRange(startTimeStamp, groupByMonths);
+    const relevantBlockData = await this.fetchLatestBlocksDataForRange(startTimeStamp, timeUnitFormat);
 
-    const all: ITopHoldersAtTime[] = await Promise.all(relevantBlockData.map(async blockData => {
+    const topHoldersByTimes: ITopHoldersAtTime[] = await Promise.all(relevantBlockData.map(async blockData => {
+      // Fetches all of the top holders for the given block
       const topHoldersForBlock =  await this.fetchTopHoldersByBlock(blockData.blockNumber, minHolding);
 
       const topHOlderForTimeUnit: ITopHoldersAtTime = {
@@ -98,11 +105,15 @@ export class MySqlDB implements IDB {
     }));
 
     // Sorts by time, ascending
-    all.sort((a, b) => a.timestamp - b.timestamp);
+    topHoldersByTimes.sort((a, b) => a.timestamp - b.timestamp);
 
-    return all;
+    return topHoldersByTimes;
   }
 
+
+  /**
+   * Fetches data about the top holders (more than the minimum holding) for the given block.
+   */
   private async fetchTopHoldersByBlock(blockNumber: number, minHolding: number) {
     const ORBS_HQ = 'Orbs HQ';
     const EXCHANGE = 'Exchange';
@@ -223,6 +234,9 @@ export class MySqlDB implements IDB {
     }));
   }
 
+  /**
+   * Allows us to map the db result to another form in a type-safe manner.
+   */
   private async mappedQuery<T>(queryStr: string, rowsMapper?: (row: any) => T,  values?: {} ): Promise<T[]> {
     const dbRes = await this.query(queryStr, values);
 
