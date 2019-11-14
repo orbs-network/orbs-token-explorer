@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Prism</title>
+    <title>Orbs Token Explorer</title>
     <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Montserrat:400,600,700" rel="stylesheet">
     <link rel="icon" type="image/png" href="/assets/favicon.png"/>
@@ -42,11 +42,11 @@
     <% } %>
 
     <% if (process.env.MINIFYED_REACT_JS === 'true') { %>       
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.7.0/umd/react.production.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.7.0/umd/react-dom.production.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.10.2/umd/react.production.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.10.2/umd/react-dom.production.min.js"></script>
     <% } else { %>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.7.0/umd/react.development.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.7.0/umd/react-dom.development.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.10.2/umd/react.development.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.10.2/umd/react-dom.development.js"></script>
     <% } %>
 		<script type="text/javascript" src="<%- manifest['vendors.js'] %>"></script>
 		<script type="text/javascript" src="<%- manifest['main.js'] %>"></script>

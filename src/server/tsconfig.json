@@ -5,6 +5,7 @@
     "module": "commonjs",
     "importHelpers": true,
     "allowJs": true,
+    "esModuleInterop": true,
     "outDir": "../../dist/server-root",
     "rootDir": "..",
     "lib": ["esnext"],

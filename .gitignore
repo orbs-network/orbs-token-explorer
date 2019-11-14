@@ -2,3 +2,6 @@ dist
 .idea
 node_modules
 logs
+
+# Dev Env variables
+.env_secrets

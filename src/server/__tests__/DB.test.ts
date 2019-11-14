@@ -10,14 +10,14 @@ import * as winston from 'winston';
 import { POSTGRES_URI } from '../config';
 import { IDB } from '../db/IDB';
 import { InMemoryDB } from '../db/InMemoryDB';
-import { PostgresDB } from '../db/PostgresDB';
+import { MySqlDB } from '../db/MySqlDB';
 import { genLogger } from '../logger/LoggerFactory';
 
 const logger: winston.Logger = genLogger(false, false, false);
 
 testDb(new InMemoryDB(), 'InMemoryDB');
 testDb(
-  new PostgresDB(logger, 'postgres://token-explorer:token-explorer@localhost:5432/token-explorer-for-tests'),
+  new MySqlDB(logger, 'postgres://token-explorer:token-explorer@localhost:5432/token-explorer-for-tests'),
   'PostgresDB',
 );
 
