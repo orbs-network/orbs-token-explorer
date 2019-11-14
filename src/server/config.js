@@ -36,7 +36,6 @@ const ROLLBAR_ACCESS_TOKEN_SERVER = process.env.ROLLBAR_ACCESS_TOKEN_SERVER;
 
 // database
 const DATABASE_TYPE = process.env.DATABASE_TYPE;
-const POSTGRES_URI = process.env.POSTGRES_URI;
 const mySqlHost = process.env.MYSQL_HOST;
 const mySqlUser = process.env.MYSQL_USER;
 const mySqlPassword = process.env.MYSQL_PASSWORD;
@@ -60,6 +59,5 @@ module.exports = {
   FORCE_HTTPS,
   WEBPACK_PORT,
   DATABASE_TYPE,
-  POSTGRES_URI,
   MYSQL_CREDENTIALS,
 };

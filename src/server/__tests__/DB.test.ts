@@ -7,7 +7,6 @@
  */
 
 import * as winston from 'winston';
-import { POSTGRES_URI } from '../config';
 import { IDB } from '../db/IDB';
 import { InMemoryDB } from '../db/InMemoryDB';
 import { MySqlDB } from '../db/MySqlDB';

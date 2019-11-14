@@ -9,14 +9,10 @@
 import * as winston from 'winston';
 import { IDB } from './IDB';
 import { ISomeData } from '../../shared/ISomeData';
-import * as pg from 'pg';
 import Moment from 'moment';
 
 import {Connection, createConnection} from 'mysql';
 import {ITopHoldersAtTime} from '../../shared/serverResponses/bi/serverBiResponses';
-
-pg.types.setTypeParser(20, 'text', parseInt);
-pg.types.setTypeParser(1700, parseFloat);
 
 export class MySqlDB implements IDB {
   private dbConnection: Connection;
