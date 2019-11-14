@@ -6,13 +6,12 @@
  * The above notice should be included in all copies or substantial portions of the software.
  */
 
-import * as winston from 'winston';
-import { IDB } from './IDB';
-import { ISomeData } from '../../shared/ISomeData';
 import Moment from 'moment';
+import { Connection, createConnection } from 'mysql';
+import * as winston from 'winston';
+import { ITopHoldersAtTime } from '../../shared/serverResponses/bi/serverBiResponses';
+import { IDB } from './IDB';
 
-import {Connection, createConnection} from 'mysql';
-import {ITopHoldersAtTime} from '../../shared/serverResponses/bi/serverBiResponses';
 
 export class MySqlDB implements IDB {
   private dbConnection: Connection;
@@ -22,15 +21,6 @@ export class MySqlDB implements IDB {
   }
 
   public async rebuild(): Promise<void> {
-    // await this.query(`drop schema public cascade;`);
-    // await this.query(`create schema public;`);
-
-    // EXAMPLE //
-    // await this.query(`
-    // CREATE TABLE some_data (
-    //   name text,
-    //   age numeric
-    // );`);
   }
 
   public async init(): Promise<void> {
@@ -40,32 +30,6 @@ export class MySqlDB implements IDB {
   public async destroy(): Promise<void> {
     await this.dbConnection.end();
   }
-
-  // EXAMPLE //
-  public async storeSomeData(someData: ISomeData): Promise<void> {
-    const { age, name } = someData;
-    await this.query(`
-      INSERT INTO some_data (name, age)
-      VALUES (
-        '${name}',
-        ${age}
-      );
-      `);
-  }
-
-  // EXAMPLE //
-  public async getSomeData(name: string): Promise<ISomeData> {
-    const query = `
-      SELECT age, name
-      FROM some_data
-      WHERE name = '${name}';
-    `;
-
-    const rows = await this.query(query);
-
-    return rows.length === 0 ? null : rows[0];
-  }
-
   public async getTopTokenHolders() {
     // Used for optimization
     const minHolding = 1_000_000;

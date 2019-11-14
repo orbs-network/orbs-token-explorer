@@ -6,19 +6,12 @@
  * The above notice should be included in all copies or substantial portions of the software.
  */
 
-import { ISomeData } from '../../shared/ISomeData';
-import {ITopHoldersAtTime} from '../../shared/serverResponses/bi/serverBiResponses';
+import { ITopHoldersAtTime } from '../../shared/serverResponses/bi/serverBiResponses';
 
 export interface IDB {
   rebuild(): Promise<void>;
   init(): Promise<void>;
   destroy(): Promise<void>;
-
-  // EXAMPLE //
-  getSomeData(name: string): Promise<ISomeData>;
-
-  // EXAMPLE //
-  storeSomeData(someData: ISomeData): Promise<void>;
 
   getTopTokenHolders(): Promise<ITopHoldersAtTime[]>;
 }

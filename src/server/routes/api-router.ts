@@ -8,30 +8,15 @@
 
 import * as bodyParser from 'body-parser';
 import { Router } from 'express';
-import { IDB } from '../db/IDB';
-import { ISomeData } from '../../shared/ISomeData';
-import {IAPITopHoldersResponse, ITopHoldersAtTime} from '../../shared/serverResponses/bi/serverBiResponses';
 import NodeCache from 'node-cache';
+import { IAPITopHoldersResponse, ITopHoldersAtTime } from '../../shared/serverResponses/bi/serverBiResponses';
+import { IDB } from '../db/IDB';
 
 const apiCache = new NodeCache();
 
 export function apiRouter(db: IDB) {
   const router = Router();
   router.use(bodyParser.json());
-
-  // EXAMPLE //
-  router.get('/api/some-data/:name', async (req, res) => {
-    const { name } = req.params;
-    const someData: ISomeData = await db.getSomeData(name);
-    res.json(someData);
-  });
-
-  // EXAMPLE //
-  router.post('/api/some-data', async (req, res) => {
-    const { someData } = req.body;
-    await db.storeSomeData(someData);
-    res.send('ok');
-  });
 
   router.get<{name: string}>('/api/token-dist/top-holders', async (req, res) => {
     const topHoldersCacheKey = 'topHolders';
