@@ -21,12 +21,17 @@ export function apiRouter(db: IDB) {
 
   router.get('/api/token-dist/top-holders', async (_, res) => {
 
+    let topHoldersAtTimePoints: ITopHoldersAtTime[];
     if (!apiCache.has(TOP_HOLDERS_CACHE_KEY)) {
-      const topHolders = await db.getTopTokenHolders();
-      apiCache.set(TOP_HOLDERS_CACHE_KEY, topHolders, 60 * 60 * 24);
+      console.log('No cache, getting Top Token Holders');
+      topHoldersAtTimePoints = await db.getTopTokenHolders();
+      apiCache.set(TOP_HOLDERS_CACHE_KEY, topHoldersAtTimePoints, 60 * 60 * 24);
+    } else {
+      topHoldersAtTimePoints = apiCache.get(TOP_HOLDERS_CACHE_KEY);
+      console.log('Cache found for topHolders');
     }
+    console.log(`topHoldersAtTimePoints: ${topHoldersAtTimePoints.length}`);
 
-    const topHoldersAtTimePoints: ITopHoldersAtTime[] = apiCache.get(TOP_HOLDERS_CACHE_KEY);
 
     const resObject: IAPITopHoldersResponse = {
       topHoldersAtTimePoints
