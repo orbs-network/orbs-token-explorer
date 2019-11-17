@@ -25,6 +25,7 @@ export class MySqlDB implements IDB {
     // this.buildConnection(host, user, password);
   }
 
+  // tslint:disable-next-line:no-empty
   public async rebuild(): Promise<void> {}
 
   public async init(): Promise<void> {
@@ -76,7 +77,7 @@ export class MySqlDB implements IDB {
    * Fetches data about the top holders (more than the minimum holding) for the given block.
    */
   private async fetchTopHoldersByBlock(blockNumber: number) {
-    const MIN_HOLDING = 1_000_000;  // Used for optimization
+    const MIN_HOLDING = 1_000_000; // Used for optimization
     const ORBS_HQ = 'Orbs HQ';
     const EXCHANGE = 'Exchange';
 
@@ -101,13 +102,14 @@ export class MySqlDB implements IDB {
       minHolding: MIN_HOLDING,
     };
 
+    // tslint:disable-next-line:interface-over-type-literal
     type TTopHolderGist = {
       address: string;
       name: string;
       type: 'OrbsLtd' | 'Exchange' | 'Unknown';
       tokens: number;
       isGuardian: boolean;
-    }
+    };
 
     return this.mappedQuery<TTopHolderGist>(
       query,
@@ -138,6 +140,7 @@ export class MySqlDB implements IDB {
       startingTimeStamp,
     };
 
+    // tslint:disable-next-line:interface-over-type-literal
     type TBlockGist = {
       blockNumber: number;
       blockTime: number;
@@ -161,7 +164,7 @@ export class MySqlDB implements IDB {
     return blocksData;
   }
 
-  private buildConnection(host: string, user: string, password: string, database: string) {
+  private buildConnection(host: string, user: string, password: string, database: string): Promise<any> {
     this.logger.info('Building MySQL connection');
 
     const connection = createConnection({
@@ -171,20 +174,17 @@ export class MySqlDB implements IDB {
       database,
     });
 
-    connection.connect(err => {
-      if (err) {
-        this.logger.error(`Failed connecting to MySql server: ${err}`);
-        throw err;
-      }
-    });
-
-    connection.on('error', err => {
+    connection.on('error', async err => {
       this.logger.error(`db error ${err}`);
 
       if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-        // Connection to the MySQL server is usually
-        this.logger.warn('MySql connection lost, will try to rebuild connection.');
-        this.buildConnection(host, user, password, host); // lost due to either server restart, or a
+        try {
+          this.logger.warn('MySql connection lost, will try to rebuild connection.');
+          this.buildConnection(host, user, password, host);
+        } catch (e) {
+          this.logger.error(`Failed re-connect attempt ${e}`);
+          throw e;
+        }
       } else {
         // connection idle timeout (the wait_timeout
         this.logger.error(`error code : ${err.code}`);
@@ -208,7 +208,18 @@ export class MySqlDB implements IDB {
       );
     };
 
-    this.dbConnection = connection;
+    return new Promise<any>((resolve, reject) => {
+      connection.connect(err => {
+        if (err) {
+          this.logger.error(`Failed connecting to MySql server: ${err}`);
+          throw reject(err);
+        }
+
+        this.dbConnection = connection;
+
+        resolve();
+      });
+    });
   }
 
   private async query(queryStr: string, values?: any): Promise<any> {
