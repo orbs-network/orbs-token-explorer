@@ -13,23 +13,20 @@ import { IAPITopHoldersResponse, ITopHoldersAtTime } from '../../shared/serverRe
 import { IDB } from '../db/IDB';
 
 const apiCache = new NodeCache();
+const TOP_HOLDERS_CACHE_KEY = 'topHolders';
 
 export function apiRouter(db: IDB) {
   const router = Router();
   router.use(bodyParser.json());
 
-  router.get<{name: string}>('/api/token-dist/top-holders', async (req, res) => {
-    const topHoldersCacheKey = 'topHolders';
+  router.get('/api/token-dist/top-holders', async (_, res) => {
 
-    if (!apiCache.has(topHoldersCacheKey)) {
+    if (!apiCache.has(TOP_HOLDERS_CACHE_KEY)) {
       const topHolders = await db.getTopTokenHolders();
-
-      apiCache.set(topHoldersCacheKey, topHolders, 60 * 60 * 24);
+      apiCache.set(TOP_HOLDERS_CACHE_KEY, topHolders, 60 * 60 * 24);
     }
 
-    const topHoldersAtTimePoints: ITopHoldersAtTime[] = apiCache.get(topHoldersCacheKey);
-
-    // const topHoldersAtTimePoints = decCache;
+    const topHoldersAtTimePoints: ITopHoldersAtTime[] = apiCache.get(TOP_HOLDERS_CACHE_KEY);
 
     const resObject: IAPITopHoldersResponse = {
       topHoldersAtTimePoints

@@ -12,57 +12,59 @@ import * as winston from 'winston';
 import { ITopHoldersAtTime } from '../../shared/serverResponses/bi/serverBiResponses';
 import { IDB } from './IDB';
 
-
 export class MySqlDB implements IDB {
   private dbConnection: Connection;
 
-  constructor(private logger: winston.Logger, private host: string, private user: string, private password: string, private database: string) {
+  constructor(
+    private logger: winston.Logger,
+    private host: string,
+    private user: string,
+    private password: string,
+    private database: string,
+  ) {
     // this.buildConnection(host, user, password);
   }
 
-  public async rebuild(): Promise<void> {
-  }
+  public async rebuild(): Promise<void> {}
 
   public async init(): Promise<void> {
-    return  this.buildConnection(this.host, this.user, this.password, this.database);
+    return this.buildConnection(this.host, this.user, this.password, this.database);
   }
 
   public async destroy(): Promise<void> {
     await this.dbConnection.end();
   }
+
   public async getTopTokenHolders() {
-    // Used for optimization
-    const minHolding = 1_000_000;
-
-    // Used to determine the time range and units returned by the query.
-    const timeUnitFormat = '%m/%Y';
-    const timeUnitName = 'month';
-
     // Calculates the timestamp to start searching from
-    const startTimeStamp = Moment.utc().subtract(1, 'year').startOf(timeUnitName).unix();
+    const startTimeStamp = Moment.utc()
+      .subtract(1, 'year')
+      .startOf('month')
+      .unix();
 
     // find all relevant blocks data
-    const relevantBlockData = await this.fetchLatestBlocksDataForRange(startTimeStamp, timeUnitFormat);
+    const relevantBlockData = await this.fetchLatestBlocksDataFromTimestamp(startTimeStamp, '%m/%Y');
 
-    const topHoldersByTimes: ITopHoldersAtTime[] = await Promise.all(relevantBlockData.map(async blockData => {
-      // Fetches all of the top holders for the given block
-      const topHoldersForBlock =  await this.fetchTopHoldersByBlock(blockData.blockNumber, minHolding);
+    const topHoldersByTimes: ITopHoldersAtTime[] = await Promise.all(
+      relevantBlockData.map(async blockGist => {
+        const topHoldersForBlock = await this.fetchTopHoldersByBlock(blockGist.blockNumber);
 
-      const topHOlderForTimeUnit: ITopHoldersAtTime = {
-        totalTokens: blockData.totalCirculation,
-        topHolders: topHoldersForBlock.map(holderForBlock => ({
-          tokens: holderForBlock.tokens,
-          displayName: holderForBlock.name || holderForBlock.address,
-          address: holderForBlock.address,
-          isOrbsAddress: holderForBlock.type === 'OrbsLtd',
-          isGuardian: holderForBlock.isGuardian,
-          isExchange: holderForBlock.type === 'Exchange',
-        })),
-        timestamp: blockData.blockTime,
-      };
+        const topHolderForTimeUnit: ITopHoldersAtTime = {
+          totalTokens: blockGist.totalCirculation,
+          topHolders: topHoldersForBlock.map(holderForBlock => ({
+            tokens: holderForBlock.tokens,
+            displayName: holderForBlock.name || holderForBlock.address,
+            address: holderForBlock.address,
+            isOrbsAddress: holderForBlock.type === 'OrbsLtd',
+            isGuardian: holderForBlock.isGuardian,
+            isExchange: holderForBlock.type === 'Exchange',
+          })),
+          timestamp: blockGist.blockTime,
+        };
 
-      return topHOlderForTimeUnit;
-    }));
+        return topHolderForTimeUnit;
+      }),
+    );
 
     // Sorts by time, ascending
     topHoldersByTimes.sort((a, b) => a.timestamp - b.timestamp);
@@ -70,11 +72,11 @@ export class MySqlDB implements IDB {
     return topHoldersByTimes;
   }
 
-
   /**
    * Fetches data about the top holders (more than the minimum holding) for the given block.
    */
-  private async fetchTopHoldersByBlock(blockNumber: number, minHolding: number) {
+  private async fetchTopHoldersByBlock(blockNumber: number) {
+    const MIN_HOLDING = 1_000_000;  // Used for optimization
     const ORBS_HQ = 'Orbs HQ';
     const EXCHANGE = 'Exchange';
 
@@ -96,22 +98,31 @@ export class MySqlDB implements IDB {
 
     const values = {
       blockNumber,
-      minHolding,
+      minHolding: MIN_HOLDING,
     };
 
-    return this.mappedQuery<{ address: string, name: string, type: 'OrbsLtd' | 'Exchange' | 'Unknown', tokens: number, isGuardian: boolean}>(query, row => ({
-      address: row.recipient,
-      name: row.name,
-      type: row.addressType ? (row.addressType === ORBS_HQ ? 'OrbsLtd' : 'Exchange' ) : 'Unknown',
-      tokens: row.tokens,
-      isGuardian: !!row.isGuardian,
-    }), values);
+    type TTopHolderGist = {
+      address: string;
+      name: string;
+      type: 'OrbsLtd' | 'Exchange' | 'Unknown';
+      tokens: number;
+      isGuardian: boolean;
+    }
+
+    return this.mappedQuery<TTopHolderGist>(
+      query,
+      row => ({
+        address: row.recipient,
+        name: row.name,
+        type: row.addressType ? (row.addressType === ORBS_HQ ? 'OrbsLtd' : 'Exchange') : 'Unknown',
+        tokens: row.tokens,
+        isGuardian: !!row.isGuardian,
+      }),
+      values,
+    );
   }
 
-  /**
-   * returns data about the latest block for each given time unit since the given start timestamp.
-   */
-  private async fetchLatestBlocksDataForRange(startingTimeStamp: number, dateGroupFormat: string) {
+  private async fetchLatestBlocksDataFromTimestamp(startingTimeStamp: number, dateGroupFormat: string) {
     // const hardCodedOrbsInCirculation = 2_000_000_000;
     const hardCodedOrbsInCirculation = 1_890_000_000;
 
@@ -127,26 +138,37 @@ export class MySqlDB implements IDB {
       startingTimeStamp,
     };
 
-    const blocksData = await this.mappedQuery<{ blockNumber: number, blockTime: number, readableDate: string, totalCirculation: number }>(query, row => {
-      return {
-        blockNumber: row.blockNumber,
-        blockTime: row.blockTime,
-        readableDate: row.date,
-        totalCirculation: hardCodedOrbsInCirculation,
-      };
-    }, values);
+    type TBlockGist = {
+      blockNumber: number;
+      blockTime: number;
+      readableDate: string;
+      totalCirculation: number;
+    };
+
+    const blocksData = await this.mappedQuery<TBlockGist>(
+      query,
+      row => {
+        return {
+          blockNumber: row.blockNumber,
+          blockTime: row.blockTime,
+          readableDate: row.date,
+          totalCirculation: hardCodedOrbsInCirculation,
+        };
+      },
+      values,
+    );
 
     return blocksData;
   }
 
-  private buildConnection( host: string, user: string, password: string, database: string)  {
+  private buildConnection(host: string, user: string, password: string, database: string) {
     this.logger.info('Building MySQL connection');
 
     const connection = createConnection({
       host,
       user,
       password,
-      database
+      database,
     });
 
     connection.connect(err => {
@@ -159,31 +181,38 @@ export class MySqlDB implements IDB {
     connection.on('error', err => {
       this.logger.error(`db error ${err}`);
 
-      if (err.code === 'PROTOCOL_CONNECTION_LOST') {   // Connection to the MySQL server is usually
+      if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+        // Connection to the MySQL server is usually
         this.logger.warn('MySql connection lost, will try to rebuild connection.');
-        this.buildConnection(host, user, password, host);   // lost due to either server restart, or a
-      } else {                                        // connection idle timeout (the wait_timeout
+        this.buildConnection(host, user, password, host); // lost due to either server restart, or a
+      } else {
+        // connection idle timeout (the wait_timeout
         this.logger.error(`error code : ${err.code}`);
-        throw err;                                    // server variable configures this)
+        throw err; // server variable configures this)
       }
     });
 
     connection.config.queryFormat = function(query, values) {
-      if (!values) { return query; }
+      if (!values) {
+        return query;
+      }
 
-      return query.replace(/\:(\w+)/g, function(txt, key) {
-        if (values.hasOwnProperty(key)) {
-          return this.escape(values[key]);
-        }
-        return txt;
-      }.bind(this));
+      return query.replace(
+        /\:(\w+)/g,
+        function(txt, key) {
+          if (values.hasOwnProperty(key)) {
+            return this.escape(values[key]);
+          }
+          return txt;
+        }.bind(this),
+      );
     };
 
     this.dbConnection = connection;
   }
 
   private async query(queryStr: string, values?: any): Promise<any> {
-    return new Promise(((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.dbConnection.query(queryStr, values, (err, dbRows) => {
         if (err) {
           return reject(err);
@@ -191,18 +220,17 @@ export class MySqlDB implements IDB {
 
         return resolve(dbRows);
       });
-    }));
+    });
   }
 
   /**
    * Allows us to map the db result to another form in a type-safe manner.
    */
-  private async mappedQuery<T>(queryStr: string, rowsMapper?: (row: any) => T,  values?: {} ): Promise<T[]> {
+  private async mappedQuery<T>(queryStr: string, rowsMapper?: (row: any) => T, values?: {}): Promise<T[]> {
     const dbRes = await this.query(queryStr, values);
 
     const results = dbRes.map(row => rowsMapper(row));
 
     return results;
   }
-
 }
