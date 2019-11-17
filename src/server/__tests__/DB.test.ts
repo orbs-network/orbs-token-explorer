@@ -15,11 +15,12 @@ import { genLogger } from '../logger/LoggerFactory';
 const logger: winston.Logger = genLogger(false, false, false);
 
 testDb(new InMemoryDB(), 'InMemoryDB');
-testDb(
-  new MySqlDB(logger, 'postgres://token-explorer:token-explorer@localhost:5432/token-explorer-for-tests'),
-  'PostgresDB',
-);
+// testDb(
+//   new MySqlDB(logger, 'postgres://token-explorer:token-explorer@localhost:5432/token-explorer-for-tests'),
+//   'PostgresDB',
+// );
 
+// NOTE : Should add proper tests after converting to an API server.
 function testDb(db: IDB, dbName: string) {
   describe(dbName, async () => {
     beforeEach(async () => {
@@ -31,11 +32,11 @@ function testDb(db: IDB, dbName: string) {
       await db.destroy();
     });
 
-    it('should set and get some data', async () => {
-      db.storeSomeData({ name: 'Test', age: 55 });
-      const actual = await db.getSomeData('Test');
-      expect(actual.age).toEqual(55);
-      expect(actual.name).toEqual('Test');
-    });
+    // it('should set and get some data', async () => {
+    //   db.storeSomeData({ name: 'Test', age: 55 });
+    //   const actual = await db.getSomeData('Test');
+    //   expect(actual.age).toEqual(55);
+    //   expect(actual.name).toEqual('Test');
+    // });
   });
 }

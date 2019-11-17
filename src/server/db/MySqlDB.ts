@@ -126,7 +126,7 @@ export class MySqlDB implements IDB {
 
   private async fetchLatestBlocksDataFromTimestamp(startingTimeStamp: number, dateGroupFormat: string) {
     // const hardCodedOrbsInCirculation = 2_000_000_000;
-    const hardCodedOrbsInCirculation = 1_890_000_000;
+    const HARD_CODED_ORBS_IN_CIRCULATION = 1_890_000_000;
 
     const query = ` SELECT MAX(block) as blockNumber, MAX(blockTime) as blockTime, DATE_FORMAT(FROM_UNIXTIME(blockTime), :dateFormat) as date
                     FROM transfers
@@ -155,7 +155,7 @@ export class MySqlDB implements IDB {
           blockNumber: row.blockNumber,
           blockTime: row.blockTime,
           readableDate: row.date,
-          totalCirculation: hardCodedOrbsInCirculation,
+          totalCirculation: HARD_CODED_ORBS_IN_CIRCULATION,
         };
       },
       values,
