@@ -78,7 +78,6 @@ export class MySqlDB implements IDB {
    */
   private async fetchTopHoldersByBlock(blockNumber: number) {
     const MIN_HOLDING = 1_000_000; // Used for optimization
-    const ORBS_HQ = 'Orbs HQ';
     const EXCHANGE = 'Exchange';
 
     const query = ` SELECT recipient,
@@ -93,7 +92,7 @@ export class MySqlDB implements IDB {
                           FROM transfers) all_unique_addresses
                           LEFT JOIN known_addresses as knwn_adrs
                             ON knwn_adrs.address = all_unique_addresses.recipient
-                            AND knwn_adrs.region in ('${ORBS_HQ}', '${EXCHANGE}')
+                            AND knwn_adrs.region in ('${EXCHANGE}')
                     WHERE in_orbs(get_stake_at_block(recipient, :blockNumber)) > :minHolding
                     ORDER BY get_stake_at_block(recipient, :blockNumber) desc`;
 

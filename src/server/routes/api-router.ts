@@ -20,7 +20,6 @@ export function apiRouter(db: IDB) {
   router.use(bodyParser.json());
 
   router.get('/api/token-dist/top-holders', async (_, res) => {
-
     if (!apiCache.has(TOP_HOLDERS_CACHE_KEY)) {
       const topHolders = await db.getTopTokenHolders();
       apiCache.set(TOP_HOLDERS_CACHE_KEY, topHolders, 60 * 60 * 24);
@@ -29,7 +28,7 @@ export function apiRouter(db: IDB) {
     const topHoldersAtTimePoints: ITopHoldersAtTime[] = apiCache.get(TOP_HOLDERS_CACHE_KEY);
 
     const resObject: IAPITopHoldersResponse = {
-      topHoldersAtTimePoints
+      topHoldersAtTimePoints,
     };
 
     res.send(resObject);
