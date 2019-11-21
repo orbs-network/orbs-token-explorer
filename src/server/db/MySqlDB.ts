@@ -115,7 +115,7 @@ export class MySqlDB implements IDB {
       row => ({
         address: row.recipient,
         name: row.name,
-        type: row.addressType ? (row.addressType === ORBS_HQ ? 'OrbsLtd' : 'Exchange') : 'Unknown',
+        type: row.addressType ? (row.addressType === EXCHANGE ? 'Exchange' : 'Unknown') : 'Unknown',
         tokens: row.tokens,
         isGuardian: !!row.isGuardian,
       }),
