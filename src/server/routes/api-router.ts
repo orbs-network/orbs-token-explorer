@@ -11,6 +11,7 @@ import { Router } from 'express';
 import NodeCache from 'node-cache';
 import { IAPITopHoldersResponse, ITopHoldersAtTime } from '../../shared/serverResponses/bi/serverBiResponses';
 import { IDB } from '../db/IDB';
+import passport from 'passport';
 
 const apiCache = new NodeCache();
 const TOP_HOLDERS_CACHE_KEY = 'topHolders';
@@ -19,8 +20,21 @@ export function apiRouter(db: IDB) {
   const router = Router();
   router.use(bodyParser.json());
 
-  router.get('/api/token-dist/top-holders', async (_, res) => {
+  router.post('/auth/login', passport.authenticate('local', {
+    successRedirect: '/',
+    failureRedirect: '/login',
+  }));
+
+  router.get('/api/token-dist/top-holders',
+    // passport.authenticate('local'),
+    async (req, res) => {
     let topHoldersAtTimePoints: ITopHoldersAtTime[];
+
+    const resObjectTemp: IAPITopHoldersResponse = {
+        topHoldersAtTimePoints: [],
+      };
+
+    return res.send(resObjectTemp);
 
     if (!apiCache.has(TOP_HOLDERS_CACHE_KEY)) {
       console.log('No cache, getting Top Token Holders');

@@ -7,16 +7,18 @@
  */
 
 import * as React from 'react';
-import { withRouter } from 'react-router';
+import {Redirect, withRouter} from 'react-router';
 import { Route, Switch } from 'react-router-dom';
 import { Home } from './components/Home';
 import { TokenOverview } from './pages/TokenOverview/TokenOverview';
+import {LoginPage} from './pages/login/LoginPage';
 
 interface IProps {
   location?: any;
 }
 
 const AppImpl = ({ location }: IProps) => {
+  console.log('location', location);
   return (
     <Switch location={location}>
       {/*<Route*/}
@@ -24,7 +26,9 @@ const AppImpl = ({ location }: IProps) => {
       {/*  path='/'*/}
       {/*  component={Home}*/}
       {/*/>*/}
-      <Route exact path='/' component={TokenOverview} />
+      <Redirect exact from='/' to='/login' />
+      <Route exact path='/tokenOverview' component={TokenOverview} />
+      <Route exact path='/login' component={LoginPage} />
     </Switch>
   );
 };
