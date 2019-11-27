@@ -18,7 +18,6 @@ interface IProps {
 }
 
 const AppImpl = ({ location }: IProps) => {
-  console.log('location', location);
   return (
     <Switch location={location}>
       {/*<Route*/}

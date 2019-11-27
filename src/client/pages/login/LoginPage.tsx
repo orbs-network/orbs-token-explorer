@@ -60,8 +60,6 @@ export const LoginPage = () => {
       if (response.status === 200) {
         history.push('/tokenOverview');
       }
-
-      console.log(response);
     } catch (e) {
       if (e.response.status === 400 || e.response.status === 401) {
         alert('Wrong credentials');
