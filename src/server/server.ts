@@ -68,7 +68,7 @@ export function initServer(db: IDB) {
     session({
       cookie: {
         // secure: !config.IS_DEV,
-        sameSite: true,
+        // sameSite: true,
         // httpOnly: true,
       },
       secret: sessionSecret,
