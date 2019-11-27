@@ -52,6 +52,8 @@ function configurePassport() {
 export function initServer(db: IDB) {
   const app = express();
 
+  const sessionSecret = process.env.PASS_SECRET;
+
   configurePassport();
 
   if (config.FORCE_HTTPS) {
@@ -65,10 +67,10 @@ export function initServer(db: IDB) {
   app.use(
     session({
       cookie: {
-        secure: true,
+        secure: !config.IS_DEV,
         sameSite: true,
       },
-      secret: 'dev_secret', // TOOD : ORL : Add a better secret
+      secret: sessionSecret,
     }),
   );
   app.use(passport.initialize());

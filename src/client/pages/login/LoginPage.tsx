@@ -1,23 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
-import {
-  Button,
-  Divider,
-  FormControlLabel,
-  FormGroup,
-  Typography,
-  Switch,
-  Slider,
-  FormControl,
-  InputLabel,
-  Input,
-  FormHelperText,
-} from '@material-ui/core';
+import React, { useCallback, useRef } from 'react';
+import axios from 'axios';
+import { Button, Divider, Typography, FormControl, InputLabel, Input } from '@material-ui/core';
 import styled from 'styled-components';
-import { TopTokenHoldersSection } from './topTokenHolders/TopTokenHoldersSection';
-import { useBoolean, useNumber } from 'react-hanger';
 import { OrbsBiService } from '../../services/OrbsBiService';
-import { IHolderStakeSnapshot, ITopHoldersAtTime } from '../../../shared/serverResponses/bi/serverBiResponses';
+import { useHistory } from 'react-router';
 
 const PagePadder = styled('div')(({ theme }) => ({
   paddingLeft: theme.spacing(2),
@@ -53,38 +39,61 @@ const StyledDivider = styled(Divider)({
 const orbsBiService = new OrbsBiService();
 
 export const LoginPage = () => {
-  const userRef = useRef();
-  const passwordRef = useRef();
+  const userRef = useRef<HTMLInputElement>();
+  const passwordRef = useRef<HTMLInputElement>();
+  const history = useHistory();
+
+  const onSubmit = useCallback(async () => {
+    const userName = userRef.current.value;
+    const password = passwordRef.current.value;
+
+    // Clear for security
+    userRef.current.value = '';
+    passwordRef.current.value = '';
+
+    try {
+      const response = await axios.post('/api/auth/login', {
+        username: userName,
+        password,
+      });
+
+      if (response.status === 200) {
+        history.push('/tokenOverview');
+      }
+
+      console.log(response);
+    } catch (e) {
+      if (e.response.status === 400 || e.response.status === 401) {
+        alert('Wrong credentials');
+      } else {
+        alert(e);
+      }
+    }
+  }, [history]);
 
   return (
-    <>
-      <FormControl>
-        <InputLabel htmlFor='input-username'>Email address</InputLabel>
-        <Input id='input-username' ref={userRef} />
-      </FormControl>
-      <br />
-      <FormControl>
-        <InputLabel htmlFor='input-password'>Password</InputLabel>
-        <Input id='input-password' type={'password'} ref={passwordRef} />
-      </FormControl>
+    <PagePadder>
+      <PageHeader variant={'h5'}>Login</PageHeader>
+      <StyledDivider />
+      <PageContent>
+        <div style={{ width: '20em' }}>
+          <FormControl>
+            <InputLabel htmlFor='input-username'>Username</InputLabel>
+            <Input id='input-username' inputRef={userRef} />
+          </FormControl>
+          <br />
+          <FormControl>
+            <InputLabel htmlFor='input-password'>Password</InputLabel>
+            <Input id='input-password' type={'password'} inputRef={passwordRef} />
+          </FormControl>
 
-      <br />
-      <Button>Log In</Button>
-    </>
+          <br />
+          <br />
+          <Button onClick={onSubmit} type={'submit'}>
+            Log In
+          </Button>
+        </div>
+      </PageContent>
+    </PagePadder>
   );
-  // {/*<PagePadder>*/}
-  //   {/*  <PageHeader variant={'h5'}>Login</PageHeader>*/}
-  //   {/*  <StyledDivider />*/}
-  //   {/*  /!*<PageContent>*!/*/}
-  //   {/*  <form onSubmit={() => console.log('submit')}>*/}
-  //   {/*    <label>*/}
-  //   {/*      Name:*/}
-  //   {/*      <input type="text" />*/}
-  //   {/*    </label>*/}
-  //
-  //   {/*    <input type="submit"  />*/}
-  //   {/*  </form>*/}
-  //   {/*  /!*</PageContent>*!/*/}
-  //   {/*</PagePadder>*/}
-  // );
 };

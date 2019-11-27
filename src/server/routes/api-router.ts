@@ -21,24 +21,29 @@ export function apiRouter(db: IDB) {
   router.use(bodyParser.json());
 
   router.post(
-    '/auth/login',
+    '/api/auth/login',
+    (req, res, next) => {
+      req.params.password = req.body.password;
+      req.params.username = req.body.username;
+      next();
+    },
     passport.authenticate('local', {
-      successRedirect: '/',
-      failureRedirect: '/login',
+      successReturnToOrRedirect: '/login',
     }),
   );
 
   router.get(
     '/api/token-dist/top-holders',
-    // passport.authenticate('local'),
+    // Basic auth filtering
+    (req, res, next) => {
+      if (req.user) {
+        next();
+      } else {
+        res.status(400).send();
+      }
+    },
     async (req, res) => {
       let topHoldersAtTimePoints: ITopHoldersAtTime[];
-
-      const resObjectTemp: IAPITopHoldersResponse = {
-        topHoldersAtTimePoints: [],
-      };
-
-      return res.send(resObjectTemp);
 
       if (!apiCache.has(TOP_HOLDERS_CACHE_KEY)) {
         console.log('No cache, getting Top Token Holders');
