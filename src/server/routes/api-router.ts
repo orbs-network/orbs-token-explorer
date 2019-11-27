@@ -20,38 +20,43 @@ export function apiRouter(db: IDB) {
   const router = Router();
   router.use(bodyParser.json());
 
-  router.post('/auth/login', passport.authenticate('local', {
-    successRedirect: '/',
-    failureRedirect: '/login',
-  }));
+  router.post(
+    '/auth/login',
+    passport.authenticate('local', {
+      successRedirect: '/',
+      failureRedirect: '/login',
+    }),
+  );
 
-  router.get('/api/token-dist/top-holders',
+  router.get(
+    '/api/token-dist/top-holders',
     // passport.authenticate('local'),
     async (req, res) => {
-    let topHoldersAtTimePoints: ITopHoldersAtTime[];
+      let topHoldersAtTimePoints: ITopHoldersAtTime[];
 
-    const resObjectTemp: IAPITopHoldersResponse = {
+      const resObjectTemp: IAPITopHoldersResponse = {
         topHoldersAtTimePoints: [],
       };
 
-    return res.send(resObjectTemp);
+      return res.send(resObjectTemp);
 
-    if (!apiCache.has(TOP_HOLDERS_CACHE_KEY)) {
-      console.log('No cache, getting Top Token Holders');
-      topHoldersAtTimePoints = await db.getTopTokenHolders();
-      apiCache.set(TOP_HOLDERS_CACHE_KEY, topHoldersAtTimePoints, 60 * 60 * 24);
-    } else {
-      topHoldersAtTimePoints = apiCache.get(TOP_HOLDERS_CACHE_KEY);
-      console.log('Cache found for topHolders');
-    }
-    console.log(`topHoldersAtTimePoints: ${topHoldersAtTimePoints.length}`);
+      if (!apiCache.has(TOP_HOLDERS_CACHE_KEY)) {
+        console.log('No cache, getting Top Token Holders');
+        topHoldersAtTimePoints = await db.getTopTokenHolders();
+        apiCache.set(TOP_HOLDERS_CACHE_KEY, topHoldersAtTimePoints, 60 * 60 * 24);
+      } else {
+        topHoldersAtTimePoints = apiCache.get(TOP_HOLDERS_CACHE_KEY);
+        console.log('Cache found for topHolders');
+      }
+      console.log(`topHoldersAtTimePoints: ${topHoldersAtTimePoints.length}`);
 
-    const resObject: IAPITopHoldersResponse = {
-      topHoldersAtTimePoints,
-    };
+      const resObject: IAPITopHoldersResponse = {
+        topHoldersAtTimePoints,
+      };
 
-    res.send(resObject);
-  });
+      res.send(resObject);
+    },
+  );
 
   return router;
 }

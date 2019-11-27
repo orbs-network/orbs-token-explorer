@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   Button,
@@ -9,7 +9,9 @@ import {
   Switch,
   Slider,
   FormControl,
-  InputLabel, Input, FormHelperText
+  InputLabel,
+  Input,
+  FormHelperText,
 } from '@material-ui/core';
 import styled from 'styled-components';
 import { TopTokenHoldersSection } from './topTokenHolders/TopTokenHoldersSection';
@@ -56,20 +58,20 @@ export const LoginPage = () => {
 
   return (
     <>
-    <FormControl>
-      <InputLabel htmlFor="input-username">Email address</InputLabel>
-      <Input id="input-username" ref={userRef}/>
-    </FormControl>
-      <br/>
       <FormControl>
-        <InputLabel htmlFor="input-password">Password</InputLabel>
-        <Input id="input-password" type={'password'} ref={passwordRef}/>
+        <InputLabel htmlFor='input-username'>Email address</InputLabel>
+        <Input id='input-username' ref={userRef} />
+      </FormControl>
+      <br />
+      <FormControl>
+        <InputLabel htmlFor='input-password'>Password</InputLabel>
+        <Input id='input-password' type={'password'} ref={passwordRef} />
       </FormControl>
 
-      <br/>
+      <br />
       <Button>Log In</Button>
     </>
-  )
+  );
   // {/*<PagePadder>*/}
   //   {/*  <PageHeader variant={'h5'}>Login</PageHeader>*/}
   //   {/*  <StyledDivider />*/}

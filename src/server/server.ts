@@ -25,26 +25,28 @@ function configurePassport() {
   const envUserName = process.env.AUTH_USERNAME;
   const envPassword = process.env.AUTH_PASSWORD;
 
-  passport.serializeUser(function (user, done) {
+  passport.serializeUser(function(user, done) {
     done(null, user);
   });
 
-  passport.deserializeUser(function (user, done) {
+  passport.deserializeUser(function(user, done) {
     done(null, user);
   });
 
-  passport.use(new passportLocal.Strategy({ passReqToCallback: true }, ((req, username, password, done) => {
-    if ((envUserName === username) && (envPassword === password)) {
-      const approvedUser = {
-        isOk: true,
-        blip: 'blop',
-      };
+  passport.use(
+    new passportLocal.Strategy({ passReqToCallback: true }, (req, username, password, done) => {
+      if (envUserName === username && envPassword === password) {
+        const approvedUser = {
+          isOk: true,
+          blip: 'blop',
+        };
 
-      return done(null, approvedUser);
-    } else {
-      return done(null, false);
-    }
-  })));
+        return done(null, approvedUser);
+      } else {
+        return done(null, false);
+      }
+    }),
+  );
 }
 
 export function initServer(db: IDB) {
@@ -60,13 +62,15 @@ export function initServer(db: IDB) {
 
   // Security & Auth
   app.use(helmet());
-  app.use(session({
-    cookie: {
-      secure: true,
-      sameSite: true,
-    },
-    secret: 'dev_secret', // TOOD : ORL : Add a better secret
-  }));
+  app.use(
+    session({
+      cookie: {
+        secure: true,
+        sameSite: true,
+      },
+      secret: 'dev_secret', // TOOD : ORL : Add a better secret
+    }),
+  );
   app.use(passport.initialize());
   app.use(passport.session());
 

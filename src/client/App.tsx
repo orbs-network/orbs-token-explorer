@@ -7,11 +7,11 @@
  */
 
 import * as React from 'react';
-import {Redirect, withRouter} from 'react-router';
+import { Redirect, withRouter } from 'react-router';
 import { Route, Switch } from 'react-router-dom';
 import { Home } from './components/Home';
 import { TokenOverview } from './pages/TokenOverview/TokenOverview';
-import {LoginPage} from './pages/login/LoginPage';
+import { LoginPage } from './pages/login/LoginPage';
 
 interface IProps {
   location?: any;
