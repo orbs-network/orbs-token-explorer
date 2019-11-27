@@ -16,6 +16,14 @@ import passport from 'passport';
 const apiCache = new NodeCache();
 const TOP_HOLDERS_CACHE_KEY = 'topHolders';
 
+const enforcedLoggedInUserMiddleware = (req, res, next) => {
+  if (req.user) {
+    next();
+  } else {
+    res.status(400).send('Not logged in');
+  }
+};
+
 export function apiRouter(db: IDB) {
   const router = Router();
   router.use(bodyParser.json());
@@ -35,13 +43,7 @@ export function apiRouter(db: IDB) {
   router.get(
     '/api/token-dist/top-holders',
     // Basic auth filtering
-    (req, res, next) => {
-      if (req.user) {
-        next();
-      } else {
-        res.status(400).send();
-      }
-    },
+    enforcedLoggedInUserMiddleware,
     async (req, res) => {
       let topHoldersAtTimePoints: ITopHoldersAtTime[];
 

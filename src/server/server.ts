@@ -25,11 +25,11 @@ function configurePassport() {
   const envUserName = process.env.AUTH_USERNAME;
   const envPassword = process.env.AUTH_PASSWORD;
 
-  passport.serializeUser(function(user, done) {
+  passport.serializeUser((user, done) => {
     done(null, user);
   });
 
-  passport.deserializeUser(function(user, done) {
+  passport.deserializeUser((user, done) => {
     done(null, user);
   });
 
@@ -38,7 +38,7 @@ function configurePassport() {
       if (envUserName === username && envPassword === password) {
         const approvedUser = {
           isOk: true,
-          blip: 'blop',
+          loginTimestamp: new Date().toString(),
         };
 
         return done(null, approvedUser);
@@ -69,8 +69,10 @@ export function initServer(db: IDB) {
       cookie: {
         secure: !config.IS_DEV,
         sameSite: true,
+        httpOnly: true,
       },
       secret: sessionSecret,
+      name: 'ses',
     }),
   );
   app.use(passport.initialize());

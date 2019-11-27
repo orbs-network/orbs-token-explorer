@@ -92,7 +92,6 @@ export class MySqlDB implements IDB {
                           FROM transfers) all_unique_addresses
                           LEFT JOIN known_addresses as knwn_adrs
                             ON knwn_adrs.address = all_unique_addresses.recipient
-                            AND knwn_adrs.region in ('${EXCHANGE}')
                     WHERE in_orbs(get_stake_at_block(recipient, :blockNumber)) > :minHolding
                     ORDER BY get_stake_at_block(recipient, :blockNumber) desc`;
 
